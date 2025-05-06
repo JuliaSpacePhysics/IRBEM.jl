@@ -37,14 +37,19 @@ export trace_field_line, drift_shell, drift_bounce_orbit
 # Physical constants
 const Re = 6371.0  # Earth radius in km
 const c = 3.0e8    # Speed of light in m/s
+const NTIME_MAX = Ref{Int32}()
 
 # External magnetic field model lookup table
 const EXT_MODELS = ["None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T96",
     "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
 
+function __init__()
+    @ccall libirbem.get_irbem_ntime_max1_(NTIME_MAX::Ref{Int32})::Cvoid
+end
+
+include("utils.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")
-include("utils.jl")
 
 end # module

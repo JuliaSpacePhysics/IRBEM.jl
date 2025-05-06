@@ -3,7 +3,6 @@ mutable struct MagneticField
     options::Vector{Int32}
     sysaxes::Int32
     verbose::Bool
-    NTIME_MAX::Int32
 
     function MagneticField(;
         options::Vector{Int}=[0, 0, 0, 0, 0],
@@ -27,16 +26,11 @@ mutable struct MagneticField
 
         sysaxes_val = coord_sys(sysaxes)
 
-        # Get NTIME_MAX from library
-        ntime_max = Ref{Int32}(0)
-        @ccall libirbem.get_irbem_ntime_max1_(ntime_max::Ref{Int32})::Cvoid
-
         new(
             Int32(kext_val),
             Int32.(options),
             sysaxes_val,
-            verbose,
-            ntime_max[]
+            verbose
         )
     end
 end
@@ -61,8 +55,8 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
 
     # Check if ntime exceeds NTIME_MAX
-    if ntime > model.NTIME_MAX
-        throw(ArgumentError("Number of time steps ($ntime) exceeds NTIME_MAX ($(model.NTIME_MAX))"))
+    if ntime > NTIME_MAX[]
+        throw(ArgumentError("Number of time steps ($ntime) exceeds NTIME_MAX ($NTIME_MAX[])"))
     end
 
     # Process magnetic field model inputs
