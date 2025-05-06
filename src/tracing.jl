@@ -1,5 +1,69 @@
 # https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#field-tracing
 
+"""
+    trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Float64=1.0)
+
+Trace a full field line which crosses the input position.
+
+# Arguments
+- `model::MagneticField`: The magnetic field model
+- `X::Dict`: Dictionary with keys:
+  - `dateTime` or `Time`: Date and time (DateTime or String)
+  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
+- `maginput::Dict`: Dictionary with magnetic field model inputs
+- `R0::Float64=1.0`: Radial distance in Re units where to stop field line tracing
+
+# Returns
+- `Dict`: Contains keys Lm, blocal, bmin, xj, POSIT, and Nposit
+"""
+function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Float64=1.0)
+    # Process input coordinates and time
+    ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
+
+    # Check if ntime exceeds 1 (trace_field_line only supports single time)
+    if ntime > 1
+        throw(ArgumentError("trace_field_line only supports a single time point"))
+    end
+
+    # Process magnetic field model inputs
+    maginput_array = prepare_maginput(maginput, ntime)
+
+    # Initialize output arrays
+    R0 = Ref{Float64}(R0)
+    Lm = Ref{Float64}()
+    blocal = Ref{Float64}()
+    bmin = Ref{Float64}()
+    xj = Ref{Float64}()
+
+    # Maximum number of points in field line
+    max_points = 1000
+    posit = zeros(Float64, (3, max_points))
+    nposit = Ref{Int32}(0)
+
+    # Call IRBEM library function using @ccall
+    kext = model.kext
+    options = model.options
+    sysaxes = model.sysaxes
+
+    @ccall IRBEM_jll.libirbem.trace_field_line2_1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        maginput_array::Ptr{Float64},
+        R0::Ref{Float64}, Lm::Ref{Float64},
+        blocal::Ref{Float64}, bmin::Ref{Float64},
+        xj::Ref{Float64}, posit::Ptr{Float64}, nposit::Ref{Int32}
+    )::Cvoid
+
+    # Extract valid positions
+    valid_posit = posit[:, 1:nposit[]]
+
+    # Return results as a dictionary
+    return (;
+        Lm=Lm[], blocal=blocal[], bmin=bmin[],
+        xj=xj[], posit=valid_posit, Nposit=nposit[]
+    )
+end
 
 """
     drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha::Float64=90.0, R0::Float64=1.0)
