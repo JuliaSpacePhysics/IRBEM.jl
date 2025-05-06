@@ -32,6 +32,10 @@ using TestItems, TestItemRunner
     end
 end
 
+@testitem "MagneticField" begin
+    @test_nowarn MagneticField()
+end
+
 @testitem "make_lstar" setup = [Share] begin
     l_star_true_dict = Dict(
         "Lm" => 3.5597242229067536, "MLT" => 10.170297893176182,
@@ -124,6 +128,11 @@ end
 
 @testitem "Utility functions" begin
     using Dates
+
+    @test IRBEM.parse_kext("None") == 0
+    @test IRBEM.parse_kext("OPQ77") == 5
+    @test IRBEM.parse_kext(5) == 5
+
     @test IRBEM.beta(100.0) ≈ 0.5482 atol = 1e-4
     @test IRBEM.gamma(100.0) ≈ 1.1956 atol = 1e-4
 

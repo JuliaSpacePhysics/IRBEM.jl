@@ -137,6 +137,13 @@ function prepare_maginput(maginput::Dict, ntime)
     return maginput_array
 end
 
+
+parse_kext(kext::Integer) = kext
+function parse_kext(kext)
+    idx = findfirst(isequal(kext), EXT_MODELS)
+    !isnothing(idx) ? idx - 1 : throw(ArgumentError("Unknown external field model: $kext. Valid models are $EXT_MODELS"))
+end
+
 """
     coord_sys(axes)
 

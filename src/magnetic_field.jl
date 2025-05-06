@@ -1,37 +1,3 @@
-mutable struct MagneticField
-    kext::Int32
-    options::Vector{Int32}
-    sysaxes::Int32
-
-    function MagneticField(;
-        options::Vector{Int}=[0, 0, 0, 0, 0],
-        kext::Union{String,Int}="OPQ77",
-        sysaxes::Union{String,Int}="GDZ"
-    )
-        # Set kext (external magnetic field model)
-        if isa(kext, String)
-            try
-                kext_val = findfirst(isequal(kext), EXT_MODELS) - 1
-                if kext_val === nothing
-                    throw(ArgumentError("Unknown external field model: $kext"))
-                end
-            catch
-                throw(ArgumentError("Unknown external field model: $kext"))
-            end
-        else
-            kext_val = kext
-        end
-
-        sysaxes_val = coord_sys(sysaxes)
-
-        new(
-            Int32(kext_val),
-            Int32.(options),
-            sysaxes_val
-        )
-    end
-end
-
 """
     make_lstar(model::MagneticField, X::Dict, maginput::Dict)
 
