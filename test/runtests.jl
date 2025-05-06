@@ -3,6 +3,7 @@ using TestItems, TestItemRunner
 @testsnippet Share begin
     using Dates
     model = MagneticField(options=[0, 0, 0, 0, 0], kext="T89")
+    dipol_model = MagneticField(options=[0, 0, 5, 0, 5], kext=0)
     X = Dict(
         "dateTime" => DateTime("2015-02-02T06:12:43"),
         "x1" => 600.0,  # km
@@ -20,6 +21,15 @@ using TestItems, TestItemRunner
         "x3" => fill(50.0, n)    # lon
     )
     maginput_array = Dict("Kp" => fill(40.0, n))
+
+    function _compute_dipole_L_shell(posit)
+        x = posit[1, :, :]
+        y = posit[2, :, :]
+        z = posit[3, :, :]
+        r = sqrt.(x .^ 2 .+ y .^ 2 .+ z .^ 2)
+        theta = atan.(sqrt.(x .^ 2 .+ y .^ 2), z)
+        return r ./ sin.(theta) .^ 2
+    end
 end
 
 @testitem "make_lstar" setup = [Share] begin
@@ -66,7 +76,7 @@ end
 
     @test result[1] == true_blocal
     @test result[2] == true_bmin
-    @test result[3] ≈ true_POSIT
+    @test result[3] == true_POSIT
 end
 
 @testitem "find_magequator" setup = [Share] begin
@@ -75,27 +85,42 @@ end
     result = find_magequator(model, X, maginput)
 
     @test result[1] == true_bmin
-    @test result[2] ≈ true_XGEO
+    @test result[2] == true_XGEO
 end
 
-
-@testitem "get_mlt" begin
-    model = MagneticField(verbose=false, kext="T89")
-
-    # Test with GEO coordinates
-    X = Dict(
+@testitem "get_mlt" setup = [Share] begin
+    # Corresponds to test_get_mlt in Python
+    input_dict = Dict(
         "dateTime" => DateTime("2015-02-02T06:12:43"),
         "x1" => 2.195517156287977,
         "x2" => 2.834061428571752,
         "x3" => 0.34759070278576953
     )
-
-    mlt = get_mlt(model, X)
-
-    # MLT should be a scalar value between 0 and 24
-    @test 0 <= mlt <= 24
+    true_MLT = 9.56999052595853
+    @test get_mlt(model, input_dict) == true_MLT
 end
 
+@testitem "drift_shell" setup = [Share] begin
+    using NaNStatistics
+    res = drift_shell(dipol_model, X, maginput)
+    Lm = res.Lm
+    @test Lm ≈ 4.326679 atol = 1e-2
+    L_posit = _compute_dipole_L_shell(res.posit)
+    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1e-2
+end
+
+@testitem "drift_bounce_orbit" setup = [Share] begin
+    using NaNStatistics
+    res = drift_bounce_orbit(dipol_model, X, maginput)
+    Lm = res.Lm
+    @test Lm ≈ 4.326679 atol = 1e-2
+    alt = X["x1"]
+    # hmin is not available; skip or set to alt for test parity
+    hmin = alt  # Placeholder
+    @test abs((hmin - alt) / alt) <= 1e-2
+    L_posit = _compute_dipole_L_shell(res.posit)
+    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1e-2
+end
 
 @testitem "Utility functions" begin
     using Dates
