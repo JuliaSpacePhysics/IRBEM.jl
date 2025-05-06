@@ -22,14 +22,14 @@ using IRBEM_jll
 
 export MagneticField,
     make_lstar,
-    drift_shell,
-    drift_bounce_orbit,
     find_mirror_point,
     find_foot_point,
     trace_field_line,
     find_magequator,
     get_field_multi,
     get_mlt
+
+export drift_shell, drift_bounce_orbit
 
 # Physical constants
 const Re = 6371.0  # Earth radius in km
@@ -40,6 +40,7 @@ const EXT_MODELS = ["None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T9
     "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
 
 include("magnetic_field.jl")
+include("tracing.jl")
 include("utils.jl")
 
 end # module
