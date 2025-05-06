@@ -212,3 +212,19 @@ function clean_posit!(posit, Nposit)
         posit[:, n+1:end, i] .= NaN
     end
 end
+
+"""
+    @init_refs(Type, var1, var2, ...)
+
+Creates variables var1, var2, ... each initialized as `Ref{Type}()`.
+Example:
+    @init_refs(Float64, 0.0, Lm, Lstar)
+expands to:
+    Lm = Ref{Float64}(0.0)
+    Lstar = Ref{Float64}(0.0)
+"""
+macro init_refs(T, vars...)
+    quote
+        $(Expr(:block, [:($(esc(v)) = Ref{$T}()) for v in vars]...))
+    end
+end

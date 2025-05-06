@@ -36,10 +36,10 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
     POSIT = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
-    kext = Ref{Int32}(model.kext)
+    kext = model.kext
     options = model.options
-    sysaxes = Ref{Int32}(model.sysaxes)
-    alpha = Ref{Float64}(alpha)
+    sysaxes = model.sysaxes
+    alpha = Float64(alpha)
 
     @ccall libirbem.find_mirror_point1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
@@ -90,8 +90,8 @@ function find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt
     kext = model.kext
     options = model.options
     sysaxes = model.sysaxes
-    stop_alt = Ref{Float64}(stop_alt)
-    hemi_flag = Ref{Int32}(hemi_flag)
+    stop_alt = Float64(stop_alt)
+    hemi_flag = Int32(hemi_flag)
 
     @ccall libirbem.find_foot_point1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},

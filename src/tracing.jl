@@ -16,7 +16,7 @@ Trace a full field line which crosses the input position.
 # Returns
 - `Dict`: Contains keys Lm, Blocal, Bmin, XJ, POSIT, and Nposit
 """
-function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Float64=1.0)
+function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0=1.0)
     # Process input coordinates and time
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
 
@@ -29,11 +29,8 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Flo
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    R0 = Ref{Float64}(R0)
-    Lm = Ref{Float64}()
-    Blocal = Ref{Float64}()
-    Bmin = Ref{Float64}()
-    XJ = Ref{Float64}()
+    R0 = Float64(R0)
+    @init_refs Float64 Lm Blocal Bmin XJ
 
     # Maximum number of points in field line
     max_points = 1000
@@ -95,14 +92,8 @@ function drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha
     # Prepare arguments
     alpha = Float64(alpha)
     R0 = Float64(R0)
+    @init_refs Float64 Lm Lstar Bmin Bmirr XJ hmin hmin_lon
     # Output arrays
-    Lm = Ref{Float64}(0.0)
-    Lstar = Ref{Float64}(0.0)
-    Bmin = Ref{Float64}(0.0)
-    Bmirr = Ref{Float64}(0.0)
-    XJ = Ref{Float64}(0.0)
-    hmin = Ref{Float64}(0.0)
-    hmin_lon = Ref{Float64}(0.0)
     Blocal = zeros(Float64, 1000, 25)
     posit = Array{Float64,3}(undef, 3, 1000, 25)
     Nposit = zeros(Int32, 25)
@@ -169,10 +160,7 @@ function drift_shell(model::MagneticField, X::Dict, maginput::Dict)
     posit = zeros(Float64, 3, max_points, n_azimuth)
     Blocal = zeros(Float64, max_points, n_azimuth)
     Nposit = zeros(Int32, n_azimuth)
-    Lm = Ref{Float64}()
-    Lstar = Ref{Float64}()
-    Bmin = Ref{Float64}()
-    XJ = Ref{Float64}()
+    @init_refs Float64 Lm Lstar Bmin XJ
 
     # Call IRBEM library function using @ccall
     kext = model.kext

@@ -2,13 +2,11 @@ mutable struct MagneticField
     kext::Int32
     options::Vector{Int32}
     sysaxes::Int32
-    verbose::Bool
 
     function MagneticField(;
         options::Vector{Int}=[0, 0, 0, 0, 0],
         kext::Union{String,Int}="OPQ77",
-        sysaxes::Union{String,Int}="GDZ",
-        verbose::Bool=false
+        sysaxes::Union{String,Int}="GDZ"
     )
         # Set kext (external magnetic field model)
         if isa(kext, String)
@@ -29,8 +27,7 @@ mutable struct MagneticField
         new(
             Int32(kext_val),
             Int32.(options),
-            sysaxes_val,
-            verbose
+            sysaxes_val
         )
     end
 end
@@ -118,13 +115,12 @@ function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
     Bmag = zeros(Float64, ntime)
 
     # Call IRBEM library function using @ccall
-    ntime_ref = Ref{Int32}(ntime)
     kext = model.kext
     options = model.options
     sysaxes = model.sysaxes
 
     @ccall libirbem.get_field_multi_(
-        ntime_ref::Ref{Int32},
+        ntime::Ref{Int32},
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
