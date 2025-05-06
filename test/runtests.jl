@@ -69,25 +69,13 @@ end
     @test result[3] ≈ true_POSIT
 end
 
-@testitem "find_magequator" begin
-    model = MagneticField(verbose=false, kext="T89")
-
-    X = Dict(
-        "dateTime" => DateTime("2015-02-02T06:12:43"),
-        "x1" => 600.0,
-        "x2" => 60.0,
-        "x3" => 50.0
-    )
-    maginput = Dict("Kp" => 40.0)
-
+@testitem "find_magequator" setup = [Share] begin
+    true_bmin = 626.2258295723121
+    true_XGEO = [2.1962220856733894, 2.8360222891612192, 0.3472455620354017]
     result = find_magequator(model, X, maginput)
 
-    # Check that we got expected keys in the result
-    @test haskey(result, "bmin")
-    @test haskey(result, "XGEO")
-
-    # Check that XGEO is a 3-element vector (GEO coordinates)
-    @test length(result["XGEO"]) == 3
+    @test result[1] == true_bmin
+    @test result[2] ≈ true_XGEO
 end
 
 

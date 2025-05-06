@@ -376,8 +376,7 @@ function find_magequator(model::MagneticField, X::Dict, maginput::Dict)
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
-        bmin::Ref{Float64},
-        xgeo::Ptr{Float64}
+        bmin::Ref{Float64}, xgeo::Ptr{Float64}
     )::Cvoid
 
     # Return results as a dictionary
