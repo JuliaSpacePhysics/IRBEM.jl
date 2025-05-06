@@ -35,8 +35,8 @@ end
 @testitem "make_lstar" setup = [Share] begin
     l_star_true_dict = Dict(
         "Lm" => 3.5597242229067536, "MLT" => 10.170297893176182,
-        "blocal" => 42271.43059990003, "bmin" => 626.2258295723121,
-        "Lstar" => -1e+31, "xj" => 7.020585390925573
+        "Blocal" => 42271.43059990003, "Bmin" => 626.2258295723121,
+        "Lstar" => -1e+31, "XJ" => 7.020585390925573
     )
     result = make_lstar(model, X, maginput)
     @test result == l_star_true_dict
@@ -67,24 +67,24 @@ end
 end
 
 @testitem "find_mirror_point" setup = [Share] begin
-    true_blocal = 42271.43059990003
-    true_bmin = 42271.43059990003
+    true_Blocal = 42271.43059990003
+    true_Bmin = 42271.43059990003
     true_POSIT = [0.35282136776620165, 0.4204761325793738, 0.9448914452448274]
 
     alpha = 90.0  # Local pitch angle in degrees
     result = find_mirror_point(model, X, maginput, alpha)
 
-    @test result[1] == true_blocal
-    @test result[2] == true_bmin
+    @test result[1] == true_Blocal
+    @test result[2] == true_Bmin
     @test result[3] == true_POSIT
 end
 
 @testitem "find_magequator" setup = [Share] begin
-    true_bmin = 626.2258295723121
+    true_Bmin = 626.2258295723121
     true_XGEO = [2.1962220856733894, 2.8360222891612192, 0.3472455620354017]
     result = find_magequator(model, X, maginput)
 
-    @test result[1] == true_bmin
+    @test result[1] == true_Bmin
     @test result[2] == true_XGEO
 end
 

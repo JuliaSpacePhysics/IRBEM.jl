@@ -54,7 +54,7 @@ Compute magnetic coordinates at a spacecraft position.
 - `maginput::Dict`: Dictionary with magnetic field model inputs
 
 # Returns
-- `Dict`: Contains keys Lm, MLT, blocal, bmin, Lstar, and xj
+- `Dict`: Contains keys Lm, MLT, Blocal, Bmin, Lstar, and XJ
 """
 function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     # Process input coordinates and time
@@ -69,7 +69,7 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    Lm, Lstar, blocal, bmin, xj, mlt = [zeros(Float64, ntime) for _ in 1:6]
+    Lm, Lstar, Blocal, Bmin, XJ, mlt = [zeros(Float64, ntime) for _ in 1:6]
 
     # Call IRBEM library function using @ccall
     sysaxes = model.sysaxes
@@ -81,18 +81,18 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
         Lm::Ptr{Float64}, Lstar::Ptr{Float64},
-        blocal::Ptr{Float64}, bmin::Ptr{Float64},
-        xj::Ptr{Float64}, mlt::Ptr{Float64}
+        Blocal::Ptr{Float64}, Bmin::Ptr{Float64},
+        XJ::Ptr{Float64}, mlt::Ptr{Float64}
     )::Cvoid
 
     # Return results as a dictionary
     return Dict(
         "Lm" => ntime == 1 ? Lm[1] : Lm,
         "MLT" => ntime == 1 ? mlt[1] : mlt,
-        "blocal" => ntime == 1 ? blocal[1] : blocal,
-        "bmin" => ntime == 1 ? bmin[1] : bmin,
+        "Blocal" => ntime == 1 ? Blocal[1] : Blocal,
+        "Bmin" => ntime == 1 ? Bmin[1] : Bmin,
         "Lstar" => ntime == 1 ? Lstar[1] : Lstar,
-        "xj" => ntime == 1 ? xj[1] : xj
+        "XJ" => ntime == 1 ? XJ[1] : XJ
     )
 end
 
@@ -110,7 +110,7 @@ Find the magnitude and location of the mirror point along a field line traced fr
 - `alpha::Float64`: Local pitch angle in degrees
 
 # Returns
-- `Dict`: Contains keys blocal, bmin, and POSIT (GEO coordinates of mirror point)
+- `Dict`: Contains keys Blocal, Bmin, and POSIT (GEO coordinates of mirror point)
 """
 function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha::Float64)
     # Process input coordinates and time
@@ -125,7 +125,7 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    blocal = Ref{Float64}()
+    Blocal = Ref{Float64}()
     bmirror = Ref{Float64}()
     POSIT = zeros(Float64, 3)
 
@@ -140,10 +140,10 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         alpha::Ref{Float64}, maginput_array::Ptr{Float64},
-        blocal::Ref{Float64}, bmirror::Ref{Float64}, POSIT::Ptr{Float64}
+        Blocal::Ref{Float64}, bmirror::Ref{Float64}, POSIT::Ptr{Float64}
     )::Cvoid
 
-    (; blocal=blocal[], bmin=bmirror[], POSIT)
+    (; Blocal=Blocal[], Bmin=bmirror[], POSIT)
 end
 
 """
@@ -212,7 +212,7 @@ Find the coordinates of the magnetic equator from tracing the magnetic field lin
 - `maginput::Dict`: Dictionary with magnetic field model inputs
 
 # Returns
-- `Dict`: Contains keys bmin and XGEO (location of magnetic equator in GEO coordinates)
+- `Dict`: Contains keys Bmin and XGEO (location of magnetic equator in GEO coordinates)
 """
 function find_magequator(model::MagneticField, X::Dict, maginput::Dict)
     # Process input coordinates and time
@@ -227,7 +227,7 @@ function find_magequator(model::MagneticField, X::Dict, maginput::Dict)
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    bmin = Ref{Float64}(0.0)
+    Bmin = Ref{Float64}(0.0)
     XGEO = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
@@ -239,11 +239,11 @@ function find_magequator(model::MagneticField, X::Dict, maginput::Dict)
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
-        bmin::Ref{Float64}, XGEO::Ptr{Float64}
+        Bmin::Ref{Float64}, XGEO::Ptr{Float64}
     )::Cvoid
 
     # Return results as a dictionary
-    return (; bmin=bmin[], XGEO)
+    return (; Bmin=Bmin[], XGEO)
 end
 
 """

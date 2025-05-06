@@ -48,8 +48,8 @@ maginput = Dict("Kp" => 40.0)
 result = make_lstar(model, X, maginput)
 println("L* = ", result["Lstar"])
 println("Lm = ", result["Lm"])
-println("Blocal = ", result["blocal"], " nT")
-println("Bmin = ", result["bmin"], " nT")
+println("Blocal = ", result["Blocal"], " nT")
+println("Bmin = ", result["Bmin"], " nT")
 
 # Trace a field line
 field_line = trace_field_line(model, X, maginput)
@@ -57,7 +57,7 @@ println("Number of points in field line: ", field_line["Nposit"])
 
 # Find the magnetic equator
 equator = find_magequator(model, X, maginput)
-println("Bmin at equator = ", equator["bmin"], " nT")
+println("Bmin at equator = ", equator["Bmin"], " nT")
 println("Equator position (GEO) = ", equator["XGEO"])
 
 # Calculate MLT

@@ -14,7 +14,7 @@ Trace a full field line which crosses the input position.
 - `R0::Float64=1.0`: Radial distance in Re units where to stop field line tracing
 
 # Returns
-- `Dict`: Contains keys Lm, blocal, bmin, xj, POSIT, and Nposit
+- `Dict`: Contains keys Lm, Blocal, Bmin, XJ, POSIT, and Nposit
 """
 function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Float64=1.0)
     # Process input coordinates and time
@@ -31,14 +31,14 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Flo
     # Initialize output arrays
     R0 = Ref{Float64}(R0)
     Lm = Ref{Float64}()
-    blocal = Ref{Float64}()
-    bmin = Ref{Float64}()
-    xj = Ref{Float64}()
+    Blocal = Ref{Float64}()
+    Bmin = Ref{Float64}()
+    XJ = Ref{Float64}()
 
     # Maximum number of points in field line
     max_points = 1000
     posit = zeros(Float64, (3, max_points))
-    nposit = Ref{Int32}(0)
+    Nposit = Ref{Int32}(0)
 
     # Call IRBEM library function using @ccall
     kext = model.kext
@@ -51,17 +51,17 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Flo
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
         R0::Ref{Float64}, Lm::Ref{Float64},
-        blocal::Ref{Float64}, bmin::Ref{Float64},
-        xj::Ref{Float64}, posit::Ptr{Float64}, nposit::Ref{Int32}
+        Blocal::Ref{Float64}, Bmin::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ref{Int32}
     )::Cvoid
 
     # Extract valid positions
-    valid_posit = posit[:, 1:nposit[]]
+    valid_posit = posit[:, 1:Nposit[]]
 
     # Return results as a dictionary
     return (;
-        Lm=Lm[], blocal=blocal[], bmin=bmin[],
-        xj=xj[], posit=valid_posit, Nposit=nposit[]
+        Lm=Lm[], Blocal=Blocal[], Bmin=Bmin[],
+        XJ=XJ[], posit=valid_posit, Nposit=Nposit[]
     )
 end
 
@@ -80,7 +80,7 @@ Trace a full drift-bounce orbit for particles with a specified pitch angle at th
 - `R0::Float64`: Minimum radial distance allowed along the drift path (default 1.0)
 
 # Returns
-- `Dict`: Contains keys Lm, lstar, blocal, bmin, bmirr, xj, POSIT, Nposit, hmin, hmin_lon
+- `Dict`: Contains keys Lm, lstar, Blocal, Bmin, bmirr, XJ, POSIT, Nposit, hmin, hmin_lon
 
 Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_BOUNCE_ORBIT)
 """
