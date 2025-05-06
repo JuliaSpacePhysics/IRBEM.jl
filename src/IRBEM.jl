@@ -23,6 +23,7 @@ using IRBEM_jll
 export MagneticField,
     make_lstar,
     drift_shell,
+    drift_bounce_orbit,
     find_mirror_point,
     find_foot_point,
     trace_field_line,

@@ -108,58 +108,56 @@ Trace a full drift shell for particles that have their mirror point at the input
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
 - `maginput::Dict`: Dictionary with magnetic field model inputs
 
-# Returns
-- `Dict`: Contains keys Lm, Lstar, blocal, bmin, xj, POSIT, and Nposit
+# Outputs
+- `Lm`: L McIlwain
+- `Lstar`: L Roederer or Φ=2π Bo/L* (nT Re2), depending on the options value
+- `Blocal` (array of (1000, 48)): magnitude of magnetic field at point (nT)
+- `Bmin`: magnitude of magnetic field at equator (nT)
+- `XJ`: I, related to second adiabatic invariant (Re)
+- `posit` (array of (3, 1000, 48)): Cartesian coordinates in GEO along the drift shell
+- `Nposit` (array of 48 integer): number of points in posit along each traced field line   
+
+Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_SHELL)
 """
 function drift_shell(model::MagneticField, X::Dict, maginput::Dict)
     # Process input coordinates and time
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-
-    # Check if ntime exceeds 1 (drift_shell only supports single time)
     if ntime > 1
         throw(ArgumentError("drift_shell only supports a single time point"))
     end
-
-    # Process magnetic field model inputs
     maginput_array = prepare_maginput(maginput, ntime)
 
-    # Initialize output arrays
-    Lm = Ref{Float64}(0.0)
-    Lstar = Ref{Float64}(0.0)
-    blocal = Ref{Float64}(0.0)
-    bmin = Ref{Float64}(0.0)
-    xj = Ref{Float64}(0.0)
-
-    # Maximum number of points in drift shell
+    # Output arrays (match Python shapes)
     max_points = 1000
-    posit = zeros(Float64, (3, max_points))
-    nposit = Ref{Int32}(0)
+    n_azimuth = 48
+    posit = zeros(Float64, 3, max_points, n_azimuth)
+    Blocal = zeros(Float64, max_points, n_azimuth)
+    Nposit = zeros(Int32, n_azimuth)
+    Lm = Ref{Float64}()
+    Lstar = Ref{Float64}()
+    Bmin = Ref{Float64}()
+    XJ = Ref{Float64}()
 
     # Call IRBEM library function using @ccall
+    kext = model.kext
+    options = model.options
+    sysaxes = model.sysaxes
     @ccall libirbem.drift_shell1_(
-        Ref(model.kext)::Ref{Int32},
-        model.options::Ptr{Int32},
-        Ref(model.sysaxes)::Ref{Int32},
-        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
-        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        x1::Ref{Float64}, x2::Ref{Float64}, x3::Ref{Float64},
         maginput_array::Ptr{Float64},
         Lm::Ref{Float64}, Lstar::Ref{Float64},
-        blocal::Ref{Float64}, bmin::Ref{Float64},
-        xj::Ref{Float64}, posit::Ptr{Float64}, nposit::Ref{Int32}
+        Blocal::Ptr{Float64}, Bmin::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ptr{Int32}
     )::Cvoid
 
-    # Extract valid positions
-    valid_posit = posit[:, 1:nposit[]]
+    clean_posit!(posit, Nposit)
 
-    # Return results as a dictionary
-    return Dict(
-        "Lm" => Lm[],
-        "Lstar" => Lstar[],
-        "blocal" => blocal[],
-        "bmin" => bmin[],
-        "xj" => xj[],
-        "POSIT" => valid_posit,
-        "Nposit" => nposit[]
+    return (;
+        Lm=Lm[], Lstar=Lstar[],
+        Blocal, Bmin=Bmin[],
+        XJ=XJ[], posit, Nposit
     )
 end
 
@@ -192,8 +190,8 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    blocal = Ref{Float64}(0.0)
-    bmirror = Ref{Float64}(0.0)
+    blocal = Ref{Float64}()
+    bmirror = Ref{Float64}()
     POSIT = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
@@ -247,13 +245,10 @@ function find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt
     BFOOT = zeros(Float64, 3)
     BFOOTMAG = Ref{Float64}(0.0)
 
+    # Call IRBEM library function using @ccall
     kext = model.kext
     options = model.options
     sysaxes = model.sysaxes
-
-    # Call IRBEM library function using @ccall
-    kext = Ref{Int32}(kext)
-    sysaxes = Ref{Int32}(sysaxes)
     stop_alt = Ref{Float64}(stop_alt)
     hemi_flag = Ref{Int32}(hemi_flag)
 
@@ -309,9 +304,9 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Flo
     nposit = Ref{Int32}(0)
 
     # Call IRBEM library function using @ccall
-    kext = Ref{Int32}(model.kext)
+    kext = model.kext
     options = model.options
-    sysaxes = Ref{Int32}(model.sysaxes)
+    sysaxes = model.sysaxes
 
     @ccall IRBEM_jll.libirbem.trace_field_line2_1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
@@ -366,24 +361,22 @@ function find_magequator(model::MagneticField, X::Dict, maginput::Dict)
 
     # Initialize output arrays
     bmin = Ref{Float64}(0.0)
-    xgeo = zeros(Float64, 3)
+    XGEO = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
+    kext = model.kext
+    options = model.options
+    sysaxes = model.sysaxes
     @ccall libirbem.find_magequator1_(
-        Ref(model.kext)::Ref{Int32},
-        model.options::Ptr{Int32},
-        Ref(model.sysaxes)::Ref{Int32},
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
-        bmin::Ref{Float64}, xgeo::Ptr{Float64}
+        bmin::Ref{Float64}, XGEO::Ptr{Float64}
     )::Cvoid
 
     # Return results as a dictionary
-    return Dict(
-        "bmin" => bmin[],
-        "XGEO" => xgeo
-    )
+    return (; bmin=bmin[], XGEO)
 end
 
 """
@@ -414,12 +407,13 @@ function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
 
     # Call IRBEM library function using @ccall
     ntime_ref = Ref{Int32}(ntime)
-    kext = Ref{Int32}(model.kext)
+    kext = model.kext
     options = model.options
-    sysaxes = Ref{Int32}(model.sysaxes)
+    sysaxes = model.sysaxes
 
     @ccall libirbem.get_field_multi_(
-        ntime_ref::Ref{Int32}, kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        ntime_ref::Ref{Int32},
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64}
@@ -465,12 +459,76 @@ function get_mlt(model::MagneticField, X::Dict)
 
     # Call IRBEM library function using @ccall
     @ccall libirbem.get_mlt1_(
-        Ref(iyr)::Ref{Int32},
-        Ref(idoy)::Ref{Int32},
-        Ref(ut)::Ref{Float64},
+        iyr::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
         xgeo::Ptr{Float64},
         mlt::Ref{Float64}
     )::Cvoid
 
     return mlt[]
+end
+
+"""
+    drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha::Float64=90.0, R0::Float64=1.0)
+
+Trace a full drift-bounce orbit for particles with a specified pitch angle at the input location. Returns only positions between mirror points, with 25 azimuths.
+
+# Arguments
+- `model::MagneticField`: The magnetic field model
+- `X::Dict`: Dictionary with keys:
+  - `dateTime` or `Time`: Date and time (DateTime or String)
+  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
+- `maginput::Dict`: Dictionary with magnetic field model inputs
+- `alpha::Float64`: Local pitch angle in degrees (default 90)
+- `R0::Float64`: Minimum radial distance allowed along the drift path (default 1.0)
+
+# Returns
+- `Dict`: Contains keys Lm, lstar, blocal, bmin, bmirr, xj, POSIT, Nposit, hmin, hmin_lon
+
+Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_BOUNCE_ORBIT)
+"""
+function drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha=90, R0=1)
+    # Process input coordinates and time
+    ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
+    if ntime > 1
+        throw(ArgumentError("drift_bounce_orbit only supports a single time point"))
+    end
+    maginput_array = prepare_maginput(maginput, ntime)
+
+    # Prepare arguments
+    alpha = Float64(alpha)
+    R0 = Float64(R0)
+    # Output arrays
+    Lm = Ref{Float64}(0.0)
+    Lstar = Ref{Float64}(0.0)
+    Bmin = Ref{Float64}(0.0)
+    Bmirr = Ref{Float64}(0.0)
+    XJ = Ref{Float64}(0.0)
+    hmin = Ref{Float64}(0.0)
+    hmin_lon = Ref{Float64}(0.0)
+    Blocal = zeros(Float64, 1000, 25)
+    posit = Array{Float64,3}(undef, 3, 1000, 25)
+    Nposit = zeros(Int32, 25)
+    # Call IRBEM library function
+    kext = model.kext
+    options = model.options
+    sysaxes = model.sysaxes
+    @ccall libirbem.drift_bounce_orbit2_1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        x1::Ref{Float64}, x2::Ref{Float64}, x3::Ref{Float64},
+        alpha::Ref{Float64}, maginput_array::Ptr{Float64},
+        R0::Ref{Float64}, Lm::Ref{Float64}, Lstar::Ref{Float64},
+        Blocal::Ptr{Float64}, Bmin::Ref{Float64}, Bmirr::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ptr{Int32},
+        hmin::Ref{Float64}, hmin_lon::Ref{Float64}
+    )::Cvoid
+
+    clean_posit!(posit, Nposit)
+
+    return (;
+        Lm=Lm[], Lstar=Lstar[],
+        Blocal, Bmin, Bmirr,
+        XJ=XJ[], posit, Nposit,
+        hmin=hmin[], hmin_lon=hmin_lon[]
+    )
 end
