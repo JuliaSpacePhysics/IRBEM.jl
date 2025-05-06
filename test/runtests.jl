@@ -101,7 +101,7 @@ end
         "x3" => 0.34759070278576953
     )
     true_MLT = 9.56999052595853
-    @test get_mlt(model, input_dict) == true_MLT
+    @test get_mlt(input_dict) == true_MLT
 end
 
 @testitem "drift_shell" setup = [Share] begin

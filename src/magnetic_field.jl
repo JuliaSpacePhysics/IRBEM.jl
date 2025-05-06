@@ -114,26 +114,19 @@ Get Magnetic Local Time (MLT) from a Cartesian GEO position and date.
 # Returns
 - `Float64`: The MLT value (hours)
 """
-function get_mlt(model::MagneticField, X::Dict)
-    if model.verbose
-        println("Running get_mlt")
-    end
-
+function get_mlt(X::Dict)
     # Process time
-    dt = get_datetime(X)
-    iyr = Int32(year(dt))
-    idoy = Int32(dayofyear(dt))
-    ut = Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt))
+    _, iyear, idoy, ut, _, _, _ = process_coords_time(X)
 
     # Get GEO coordinates
-    xgeo = [Float64(X["x1"]), Float64(X["x2"]), Float64(X["x3"])]
+    xgeo = Float64[X["x1"], X["x2"], X["x3"]]
 
     # Initialize output
     mlt = Ref{Float64}(0.0)
 
     # Call IRBEM library function using @ccall
     @ccall libirbem.get_mlt1_(
-        iyr::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
         xgeo::Ptr{Float64},
         mlt::Ref{Float64}
     )::Cvoid
