@@ -72,11 +72,11 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     Lm, Lstar, blocal, bmin, xj, mlt = [zeros(Float64, ntime) for _ in 1:6]
 
     # Call IRBEM library function using @ccall
+    sysaxes = model.sysaxes
+    kext = model.kext
+    options = model.options
     @ccall libirbem.make_lstar1_(
-        Ref(Int32(ntime))::Ref{Int32},
-        Ref(model.kext)::Ref{Int32},
-        model.options::Ptr{Int32},
-        Ref(model.sysaxes)::Ref{Int32},
+        ntime::Ref{Int32}, kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},

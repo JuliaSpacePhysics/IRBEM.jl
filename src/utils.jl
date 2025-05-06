@@ -86,7 +86,7 @@ function process_coords_time(X::Dict)
         x3 = [Float64(X["x3"])]
     end
 
-    return ntime, iyear, idoy, ut, x1, x2, x3
+    return Int32(ntime), iyear, idoy, ut, x1, x2, x3
 end
 
 """
@@ -95,7 +95,7 @@ end
 Process magnetic field model inputs from input dictionary.
 Returns a properly formatted array for IRBEM functions.
 """
-function prepare_maginput(maginput::Dict, ntime::Int)
+function prepare_maginput(maginput::Dict, ntime)
     # IRBEM expects a 25-element array for maginput
     maginput_array = zeros(Float64, 25)
 
