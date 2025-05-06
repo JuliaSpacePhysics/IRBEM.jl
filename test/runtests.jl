@@ -1,4 +1,5 @@
 using TestItems, TestItemRunner
+@run_package_tests
 
 @testsnippet Share begin
     using Dates
