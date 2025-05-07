@@ -3,7 +3,7 @@ https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#points-of-interest-o
 """
 
 """
-    find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha::Float64)
+    find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha)
 
 Find the magnitude and location of the mirror point along a field line traced from any given location and local pitch-angle.
 
@@ -13,12 +13,16 @@ Find the magnitude and location of the mirror point along a field line traced fr
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
 - `maginput::Dict`: Dictionary with magnetic field model inputs
-- `alpha::Float64`: Local pitch angle in degrees
+- `alpha`: Local pitch angle in degrees
 
 # Returns
-- `Dict`: Contains keys Blocal, Bmin, and POSIT (GEO coordinates of mirror point)
+- Blocal: magnitude of magnetic field at point (nT)
+- Bmirr: magnitude of the magnetic field at the mirror point (nT)
+- posit (array of 3 double): GEO coordinates of the mirror point (Re)
+
+References: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-FIND_MIRROR_POINT)
 """
-function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha::Float64)
+function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha)
     # Process input coordinates and time
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
 
@@ -32,7 +36,7 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
 
     # Initialize output arrays
     Blocal = Ref{Float64}()
-    bmirror = Ref{Float64}()
+    Bmirr = Ref{Float64}()
     POSIT = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
@@ -46,14 +50,14 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha:
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         alpha::Ref{Float64}, maginput_array::Ptr{Float64},
-        Blocal::Ref{Float64}, bmirror::Ref{Float64}, POSIT::Ptr{Float64}
+        Blocal::Ref{Float64}, Bmirr::Ref{Float64}, posit::Ptr{Float64}
     )::Cvoid
 
-    (; Blocal=Blocal[], Bmin=bmirror[], POSIT)
+    (; Blocal=Blocal[], Bmirr=Bmirr[], posit)
 end
 
 """
-    find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt::Float64, hemi_flag::Int)
+    find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt, hemi_flag)
 
 Find the footprint of a field line that passes through location X in a given hemisphere.
 
@@ -63,13 +67,15 @@ Find the footprint of a field line that passes through location X in a given hem
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
 - `maginput::Dict`: Dictionary with magnetic field model inputs
-- `stop_alt::Float64`: Altitude in km where to stop field line tracing
-- `hemi_flag::Int`: Hemisphere flag (0: same as SM z, +1: northern, -1: southern)
+- `stop_alt`: Altitude in km where to stop field line tracing
+- `hemi_flag`: Hemisphere flag (0: same as SM z, +1: northern, -1: southern)
 
-# Returns
-- `Dict`: Contains keys XFOOT, BFOOT, and BFOOTMAG
+# Outputs
+- XFOOT: GDZ coordinates of the foot point (Re)
+- BFOOT: magnetic field vector (GEO) at the foot point (nT)
+- BFOOTMAG: magnitude of the magnetic field at the foot point (nT)
 """
-function find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt, hemi_flag::Int)
+function find_foot_point(model::MagneticField, X::Dict, maginput::Dict, stop_alt, hemi_flag)
     # Process input coordinates and time
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
 

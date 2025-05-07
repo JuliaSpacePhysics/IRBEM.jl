@@ -1,31 +1,28 @@
 # https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#field-tracing
 
 """
-    trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0::Float64=1.0)
+    trace_field_line(model::MagneticField, X, maginput; R0=1.0)
 
 Trace a full field line which crosses the input position.
 
 # Arguments
 - `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
+- `X`: Dictionary with keys:
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-- `maginput::Dict`: Dictionary with magnetic field model inputs
-- `R0::Float64=1.0`: Radial distance in Re units where to stop field line tracing
+- `maginput`: Dictionary with magnetic field model inputs
+- `R0=1.0`: Radial distance in Re units where to stop field line tracing
 
-# Returns
-- `Dict`: Contains keys Lm, Blocal, Bmin, XJ, POSIT, and Nposit
+# Outputs
+- Lm: L McIlwain
+- Blocal (array of 3000 double): magnitude of magnetic field at point (nT)
+- Bmin: magnitude of magnetic field at equator (nT)
+- XJ: I, related to second adiabatic invariant (Re)
+- posit (array of (3, 3000) double): Cartesian coordinates in GEO along the field line
+- Nposit: number of points in posit
 """
-function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0=1.0)
-    # Process input coordinates and time
+function trace_field_line(model::MagneticField, X, maginput; R0=1.0)
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-
-    # Check if ntime exceeds 1 (trace_field_line only supports single time)
-    if ntime > 1
-        throw(ArgumentError("trace_field_line only supports a single time point"))
-    end
-
-    # Process magnetic field model inputs
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
@@ -62,30 +59,32 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0=1.0)
 end
 
 """
-    drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha::Float64=90.0, R0::Float64=1.0)
+    drift_bounce_orbit(model::MagneticField, X, maginput; alpha=90, R0=1)
 
 Trace a full drift-bounce orbit for particles with a specified pitch angle at the input location. Returns only positions between mirror points, with 25 azimuths.
 
 # Arguments
 - `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
+- `X`: Dictionary with keys:
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-- `maginput::Dict`: Dictionary with magnetic field model inputs
-- `alpha::Float64`: Local pitch angle in degrees (default 90)
-- `R0::Float64`: Minimum radial distance allowed along the drift path (default 1.0)
+- `maginput`: Dictionary with magnetic field model inputs
+- `alpha`: Local pitch angle in degrees (default 90)
+- `R0`: Minimum radial distance allowed along the drift path (default 1.0)
 
-# Returns
-- `Dict`: Contains keys Lm, lstar, Blocal, Bmin, bmirr, XJ, POSIT, Nposit, hmin, hmin_lon
+# Outputs:
+- Lm: L McIlwain
+- Lstar: L Roederer or Φ=2π Bo/L* (nT Re2), depending on the options value
+- Blocal (array of (1000, 25) double): magnitude of magnetic field at point (nT)
+- Bmin: magnitude of magnetic field at equator (nT)
+- XJ: I, related to second adiabatic invariant (Re)
+- posit (array of (3, 1000, 25) double): Cartesian coordinates in GEO along the drift shell
+- Nposit (array of 25 integer): number of points in posit along each traced field line
 
 Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_BOUNCE_ORBIT)
 """
-function drift_bounce_orbit(model::MagneticField, X::Dict, maginput::Dict; alpha=90, R0=1)
-    # Process input coordinates and time
+function drift_bounce_orbit(model::MagneticField, X, maginput; alpha=90, R0=1)
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-    if ntime > 1
-        throw(ArgumentError("drift_bounce_orbit only supports a single time point"))
-    end
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Prepare arguments
@@ -123,16 +122,16 @@ end
 
 
 """
-    drift_shell(model::MagneticField, X::Dict, maginput::Dict)
+    drift_shell(model::MagneticField, X, maginput)
 
 Trace a full drift shell for particles that have their mirror point at the input location.
 
 # Arguments
 - `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
+- `X`: Dictionary with keys:
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-- `maginput::Dict`: Dictionary with magnetic field model inputs
+- `maginput`: Dictionary with magnetic field model inputs
 
 # Outputs
 - `Lm`: L McIlwain
@@ -145,12 +144,8 @@ Trace a full drift shell for particles that have their mirror point at the input
 
 Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_SHELL)
 """
-function drift_shell(model::MagneticField, X::Dict, maginput::Dict)
-    # Process input coordinates and time
+function drift_shell(model::MagneticField, X, maginput)
     ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-    if ntime > 1
-        throw(ArgumentError("drift_shell only supports a single time point"))
-    end
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Output arrays (match Python shapes)
