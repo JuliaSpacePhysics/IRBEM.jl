@@ -26,7 +26,7 @@ function transform(time, pos, in, out)
     ntime, iyear, idoy, ut = prepare_time(time)
     sys_in = coord_sys(in)
     sys_out = coord_sys(out)
-    coord_trans_vec1!(pos_out, ntime, sys_in, sys_out, iyear, idoy, ut, pos_in)
+    coord_trans_vec1!(ntime, sys_in, sys_out, iyear, idoy, ut, pos_in, pos_out)
 
     return isa(time, Array) ? pos_out : vec(pos_out)
 end
