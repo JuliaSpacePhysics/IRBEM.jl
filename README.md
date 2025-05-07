@@ -10,7 +10,7 @@ The IRBEM library is a set of source codes dedicated to radiation belt modeling.
 
 ```julia
 using Pkg
-Pkg.add("IRBEM")
+Pkg.add("https://github.com/Beforerr/IRBEM.jl")
 ```
 
 ## Features
@@ -31,7 +31,7 @@ using IRBEM
 using Dates
 
 # Initialize the magnetic field model
-model = MagneticField(verbose=false, kext="T89")
+model = MagneticField(kext="T89")
 
 # Define position and time
 X = Dict(
@@ -45,32 +45,16 @@ X = Dict(
 maginput = Dict("Kp" => 40.0)
 
 # Compute L* and related parameters
-result = make_lstar(model, X, maginput)
-println("L* = ", result["Lstar"])
-println("Lm = ", result["Lm"])
-println("Blocal = ", result["Blocal"], " nT")
-println("Bmin = ", result["Bmin"], " nT")
+make_lstar(model, X, maginput)
 
 # Trace a field line
-field_line = trace_field_line(model, X, maginput)
-println("Number of points in field line: ", field_line["Nposit"])
+trace_field_line(model, X, maginput)
 
 # Find the magnetic equator
-equator = find_magequator(model, X, maginput)
-println("Bmin at equator = ", equator["Bmin"], " nT")
-println("Equator position (GEO) = ", equator["XGEO"])
+find_magequator(model, X, maginput)
 
 # Calculate MLT
-mlt = get_mlt(model, X)
-println("MLT = ", mlt, " hours")
-```
-
-## Building from Source
-
-This package uses BinaryBuilder to provide pre-built binaries for the IRBEM library. If you want to build the library from source, you can use the provided `build_tarballs.jl` script:
-
-```bash
-julia --project=. build_tarballs.jl
+get_mlt(X)
 ```
 
 ## Coordinate Systems
@@ -106,10 +90,6 @@ The following external magnetic field models are supported:
 - `A00`: Alexeev 2000
 - `T07`: Tsyganenko 2007
 - `MT`: Mead & Tsyganenko
-
-## License
-
-This package is distributed under the GNU Lesser General Public License (LGPL) v3.0, the same as the original IRBEM library.
 
 ## Acknowledgments
 
