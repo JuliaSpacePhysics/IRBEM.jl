@@ -26,26 +26,17 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
-    Lm, Lstar, Blocal, Bmin, XJ, mlt = [zeros(Float64, ntime) for _ in 1:6]
+    Lm, Lstar, Blocal, Bmin, XJ, MLT = [zeros(Float64, ntime) for _ in 1:6]
 
     # Call IRBEM library function using @ccall
     sysaxes = model.sysaxes
     kext = model.kext
     options = model.options
-    @ccall libirbem.make_lstar1_(
-        ntime::Ref{Int32}, kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
-        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
-        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
-        maginput_array::Ptr{Float64},
-        Lm::Ptr{Float64}, Lstar::Ptr{Float64},
-        Blocal::Ptr{Float64}, Bmin::Ptr{Float64},
-        XJ::Ptr{Float64}, mlt::Ptr{Float64}
-    )::Cvoid
-
-    return (; Lm=_only(Lm), MLT=_only(mlt),
-        Blocal=_only(Blocal), Bmin=_only(Bmin),
-        Lstar=_only(Lstar), XJ=_only(XJ)
+    make_lstar1!(
+        ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, # inputs
+        Lm, Lstar, Blocal, Bmin, XJ, MLT # outputs
     )
+    return map(_only, (; Lm, MLT, Blocal, Bmin, Lstar, XJ))
 end
 
 
@@ -79,16 +70,11 @@ function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
     kext = model.kext
     options = model.options
     sysaxes = model.sysaxes
-
-    @ccall libirbem.get_field_multi_(
-        ntime::Ref{Int32},
-        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
-        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
-        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
-        maginput_array::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64}
-    )::Cvoid
-
-    (; Bgeo=_only(Bgeo), Bmag=_only(Bmag))
+    get_field_multi!(
+        ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, # inputs
+        Bgeo, Bmag # outputs
+    )
+    return map(_only, (; Bgeo, Bmag))
 end
 
 """
@@ -101,26 +87,13 @@ Get Magnetic Local Time (MLT) from a Cartesian GEO position and date.
 - `X::Dict`: Dictionary with keys:
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in GEO system
-
-# Returns
-- `Float64`: The MLT value (hours)
 """
 function get_mlt(X::Dict)
-    # Process time
     _, iyear, idoy, ut, _, _, _ = process_coords_time(X)
-
-    # Get GEO coordinates
     xgeo = Float64[X["x1"], X["x2"], X["x3"]]
 
     # Initialize output
     mlt = Ref{Float64}(0.0)
-
-    # Call IRBEM library function using @ccall
-    @ccall libirbem.get_mlt1_(
-        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
-        xgeo::Ptr{Float64},
-        mlt::Ref{Float64}
-    )::Cvoid
-
+    get_mlt1!(iyear, idoy, ut, xgeo, mlt)
     return mlt[]
 end

@@ -26,11 +26,7 @@ function transform(time, pos, in, out)
     ntime, iyear, idoy, ut = prepare_time(time)
     sys_in = coord_sys(in)
     sys_out = coord_sys(out)
-    @ccall libirbem.coord_trans_vec1_(
-        ntime::Ref{Int32}, sys_in::Ref{Int32}, sys_out::Ref{Int32},
-        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
-        pos_in::Ptr{Float64}, pos_out::Ptr{Float64}
-    )::Cvoid
+    coord_trans_vec1!(pos_out, ntime, sys_in, sys_out, iyear, idoy, ut, pos_in)
 
     return isa(time, Array) ? pos_out : vec(pos_out)
 end

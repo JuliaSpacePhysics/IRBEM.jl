@@ -1,5 +1,5 @@
 """
-A wrapper for IRBEM's magnetic field functions.
+A wrapper for International Radiation Belt Environment Modeling (IRBEM) library
 
 # Functions
 
@@ -20,9 +20,14 @@ A wrapper for IRBEM's magnetic field functions.
 - `drift_shell`: Trace a full drift shell for particles with mirror point at input location
 - `drift_bounce_orbit`: Trace a full bounce orbit for particles with mirror point at input location
 
+## Coordinates transformations
+- `transform`: Transform coordinates from one system to another
+
+# References
+- [IRBEM Documentation](https://prbem.github.io/IRBEM/)
+- [IRBEM GitHub](https://github.com/PRBEM/IRBEM)
 """
 module IRBEM
-
 using Dates
 using IRBEM_jll
 
@@ -32,9 +37,6 @@ export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
 export transform
 
-# Physical constants
-const Re = 6371.0  # Earth radius in km
-const c = 3.0e8    # Speed of light in m/s
 const NTIME_MAX = Ref{Int32}()
 
 # External magnetic field model lookup table
@@ -45,6 +47,7 @@ function __init__()
     @ccall libirbem.get_irbem_ntime_max1_(NTIME_MAX::Ref{Int32})::Cvoid
 end
 
+include("lib.jl")
 include("utils.jl")
 include("types.jl")
 include("magnetic_field.jl")
