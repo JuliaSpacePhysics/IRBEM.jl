@@ -37,13 +37,13 @@ end
 end
 
 @testitem "make_lstar" setup = [Share] begin
-    l_star_true_dict = Dict(
-        "Lm" => 3.5597242229067536, "MLT" => 10.170297893176182,
-        "Blocal" => 42271.43059990003, "Bmin" => 626.2258295723121,
-        "Lstar" => -1e+31, "XJ" => 7.020585390925573
+    l_star_true = (
+        Lm=3.5597242229067536, MLT=10.170297893176182,
+        Blocal=42271.43059990003, Bmin=626.2258295723121,
+        Lstar=-1e+31, XJ=7.020585390925573
     )
     result = make_lstar(model, X, maginput)
-    @test result == l_star_true_dict
+    @test result == l_star_true
 end
 
 @testitem "find_foot_point" setup = [Share] begin
@@ -66,9 +66,11 @@ end
     true_Bl = [42271.43059990003, 42252.56246417121, 42252.56246417121]
 
     result = get_field_multi(model, X_array, maginput_array)
-    @info result
-    @test result[1] ≈ true_Bgeo
-    @test result[2] ≈ true_Bl
+    result2 = get_field_multi(model, X, maginput)
+    @info result2
+    @test result[1] == true_Bgeo
+    @test result[2] == true_Bl
+    @test result2[1] == true_Bgeo[:, 1]
 end
 
 @testitem "find_mirror_point" setup = [Share] begin

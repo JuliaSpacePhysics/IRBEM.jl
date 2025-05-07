@@ -11,7 +11,7 @@ Compute magnetic coordinates at a spacecraft position.
 - `maginput::Dict`: Dictionary with magnetic field model inputs
 
 # Returns
-- `Dict`: Contains keys Lm, MLT, Blocal, Bmin, Lstar, and XJ
+- `NamedTuple`: Contains fields Lm, MLT, Blocal, Bmin, Lstar, and XJ
 """
 function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
     # Process input coordinates and time
@@ -42,14 +42,9 @@ function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
         XJ::Ptr{Float64}, mlt::Ptr{Float64}
     )::Cvoid
 
-    # Return results as a dictionary
-    return Dict(
-        "Lm" => ntime == 1 ? Lm[1] : Lm,
-        "MLT" => ntime == 1 ? mlt[1] : mlt,
-        "Blocal" => ntime == 1 ? Blocal[1] : Blocal,
-        "Bmin" => ntime == 1 ? Bmin[1] : Bmin,
-        "Lstar" => ntime == 1 ? Lstar[1] : Lstar,
-        "XJ" => ntime == 1 ? XJ[1] : XJ
+    return (; Lm=_only(Lm), MLT=_only(mlt),
+        Blocal=_only(Blocal), Bmin=_only(Bmin),
+        Lstar=_only(Lstar), XJ=_only(XJ)
     )
 end
 
@@ -67,7 +62,7 @@ Compute the GEO vector of the magnetic field at input location for a set of inte
 - `maginput::Dict`: Dictionary with magnetic field model inputs
 
 # Returns
-- `Dict`: Contains keys Bgeo (GEO components of B field) and Bmag (magnitude of B field)
+- `NamedTuple`: Contains fields Bgeo (GEO components of B field) and Bmag (magnitude of B field)
 """
 function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
     # Process input coordinates and time
@@ -93,11 +88,7 @@ function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
         maginput_array::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64}
     )::Cvoid
 
-    if ntime == 1
-        (; Bgeo=Bgeo[:, 1], Bmag=Bmag[1])
-    else
-        (; Bgeo, Bmag)
-    end
+    (; Bgeo=_only(Bgeo), Bmag=_only(Bmag))
 end
 
 """

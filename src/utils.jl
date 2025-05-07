@@ -1,3 +1,6 @@
+_only(x) = length(x) == 1 ? x[1] : x
+_only(A::AbstractMatrix) = size(A, 2) == 1 ? A[:, 1] : A
+
 """
     get_datetime(X::Dict)
 
