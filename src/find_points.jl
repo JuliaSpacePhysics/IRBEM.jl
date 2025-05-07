@@ -37,7 +37,7 @@ function find_mirror_point(model::MagneticField, X::Dict, maginput::Dict, alpha)
     # Initialize output arrays
     Blocal = Ref{Float64}()
     Bmirr = Ref{Float64}()
-    POSIT = zeros(Float64, 3)
+    posit = zeros(Float64, 3)
 
     # Call IRBEM library function using @ccall
     kext = model.kext

@@ -213,9 +213,8 @@ vparallel(Ek, Bm, B, Erest=511.0) = c * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
 
 Remove trailing NaN values from the posit array.
 """
-function clean_posit!(posit, Nposit)
-    for i in eachindex(Nposit)
-        n = Nposit[i]
+function clean_posit!(posit, Nposit::AbstractVector)
+    for (i, n) in enumerate(Nposit)
         posit[:, n+1:end, i] .= NaN
     end
 end
