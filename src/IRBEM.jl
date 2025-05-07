@@ -24,8 +24,6 @@ A wrapper for IRBEM's magnetic field functions.
 module IRBEM
 
 using Dates
-using Printf
-using LinearAlgebra
 using IRBEM_jll
 
 export MagneticField
