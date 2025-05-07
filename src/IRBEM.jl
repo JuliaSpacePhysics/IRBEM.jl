@@ -4,24 +4,29 @@ A wrapper for International Radiation Belt Environment Modeling (IRBEM) library
 # Functions
 
 ## Computing magnetic field coordinates
-- `make_lstar`: Compute magnetic coordinates at a spacecraft position
+- [`make_lstar`](@ref): Compute magnetic coordinates at a spacecraft position
 
 ## Points of interest on the field line
-- `find_mirror_point`: Find magnitude and location of mirror point along field line
-- `find_foot_point`: Find footprint of field line in a given hemisphere
-- `trace_field_line`: Trace a full field line crossing the input position
-- `find_magequator`: Find coordinates of magnetic equator from field line tracing
+- [`find_mirror_point`](@ref): Find magnitude and location of mirror point along field line
+- [`find_foot_point`](@ref): Find footprint of field line in a given hemisphere
+- [`trace_field_line`](@ref): Trace a full field line crossing the input position
+- [`find_magequator`](@ref): Find coordinates of magnetic equator from field line tracing
 
 ## Magnetic field computation
-- `get_field_multi`: Compute GEO vector of magnetic field at input location
-- `get_mlt`: Get Magnetic Local Time from GEO position and date
+- [`get_field_multi`](@ref): Compute GEO vector of magnetic field at input location
+- [`get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
 
 ## Field tracing
-- `drift_shell`: Trace a full drift shell for particles with mirror point at input location
-- `drift_bounce_orbit`: Trace a full bounce orbit for particles with mirror point at input location
+- [`drift_shell`](@ref): Trace a full drift shell for particles with mirror point at input location
+- [`drift_bounce_orbit`](@ref): Trace a full bounce orbit for particles with mirror point at input location
 
 ## Coordinates transformations
-- `transform`: Transform coordinates from one system to another
+- [`transform`](@ref): Transform coordinates from one system to another
+
+## Library information
+- [`get_igrf_version`](@ref): Returns the version number of the IGRF model
+- [`irbem_fortran_version`](@ref): Provides the repository version number of the fortran source code
+- [`irbem_fortran_release`](@ref): Provides the repository release tag of the fortran source code
 
 # References
 - [IRBEM Documentation](https://prbem.github.io/IRBEM/)
@@ -36,6 +41,7 @@ export make_lstar, get_field_multi, get_mlt
 export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
 export transform
+export get_igrf_version, irbem_fortran_version, irbem_fortran_release
 
 const NTIME_MAX = Ref{Int32}()
 
