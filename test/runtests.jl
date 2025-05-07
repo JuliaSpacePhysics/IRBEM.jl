@@ -15,8 +15,7 @@ using TestItems, TestItemRunner
 
     n = 3
     X_array = Dict(
-        # "dateTime" => fill(DateTime("2015-02-02T06:12:43"), n),
-        "dateTime" => DateTime("2015-02-02T06:12:43"),
+        "dateTime" => fill(DateTime("2015-02-02T06:12:43"), n),
         "x1" => fill(600.0, n),  # km
         "x2" => fill(60.0, n),   # lat
         "x3" => fill(50.0, n)    # lon
@@ -67,6 +66,7 @@ end
     true_Bl = [42271.43059990003, 42252.56246417121, 42252.56246417121]
 
     result = get_field_multi(model, X_array, maginput_array)
+    @info result
     @test result[1] ≈ true_Bgeo
     @test result[2] ≈ true_Bl
 end
