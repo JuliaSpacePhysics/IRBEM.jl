@@ -29,13 +29,12 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0=1.0)
     maginput_array = prepare_maginput(maginput, ntime)
 
     # Initialize output arrays
+    max_points = 3000
     R0 = Float64(R0)
-    @init_refs Float64 Lm Blocal Bmin XJ
-
-    # Maximum number of points in field line
-    max_points = 1000
+    @init_refs Float64 Lm Bmin XJ
+    @init_refs Int32 Nposit
     posit = zeros(Float64, (3, max_points))
-    Nposit = Ref{Int32}(0)
+    Blocal = zeros(Float64, max_points)
 
     # Call IRBEM library function using @ccall
     kext = model.kext
@@ -44,21 +43,21 @@ function trace_field_line(model::MagneticField, X::Dict, maginput::Dict; R0=1.0)
 
     @ccall IRBEM_jll.libirbem.trace_field_line2_1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
-        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
-        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
-        maginput_array::Ptr{Float64},
-        R0::Ref{Float64}, Lm::Ref{Float64},
-        Blocal::Ref{Float64}, Bmin::Ref{Float64},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        x1::Ref{Float64}, x2::Ref{Float64}, x3::Ref{Float64},
+        maginput_array::Ptr{Float64}, R0::Ref{Float64},
+        Lm::Ref{Float64}, Blocal::Ptr{Float64}, Bmin::Ref{Float64},
         XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ref{Int32}
     )::Cvoid
 
     # Extract valid positions
-    valid_posit = posit[:, 1:Nposit[]]
+    Nposit = Nposit[]
+    valid_posit = posit[:, 1:Nposit]
 
     # Return results as a dictionary
     return (;
-        Lm=Lm[], Blocal=Blocal[], Bmin=Bmin[],
-        XJ=XJ[], posit=valid_posit, Nposit=Nposit[]
+        Lm=Lm[], Blocal, Bmin=Bmin[],
+        XJ=XJ[], posit=valid_posit, Nposit
     )
 end
 
