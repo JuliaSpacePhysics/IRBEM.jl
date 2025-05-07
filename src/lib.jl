@@ -33,3 +33,21 @@ coord_trans_vec1!(ntime, sys_in, sys_out, iyear, idoy, ut, pos_in, pos_out) =
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         pos_in::Ptr{Float64}, pos_out::Ptr{Float64}
     )::Cvoid
+
+# Library information functions
+"""
+Returns the size of time dimension in inputs and/or output arrays for some of the routines.
+
+Reference: [IRBEM Documentation](https://prbem.github.io/IRBEM/api/library_infos.html#routine-GET_IRBEM_NTIME_MAX)
+"""
+get_irbem_ntime_max1!(NTIME_MAX) =
+    @ccall libirbem.get_irbem_ntime_max1_(NTIME_MAX::Ref{Int32})::Cvoid
+
+irbem_fortran_version1!(version) =
+    @ccall libirbem.irbem_fortran_version1_(version::Ref{Int32})::Cvoid
+
+irbem_fortran_release1!(version) =
+    @ccall libirbem.irbem_fortran_release1_(version::Ptr{UInt8})::Cvoid
+
+get_igrf_version!(version) =
+    @ccall libirbem.get_igrf_version_(version::Ref{Int32})::Cvoid

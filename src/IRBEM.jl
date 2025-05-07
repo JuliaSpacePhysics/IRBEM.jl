@@ -44,7 +44,7 @@ const EXT_MODELS = ["None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T9
     "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
 
 function __init__()
-    @ccall libirbem.get_irbem_ntime_max1_(NTIME_MAX::Ref{Int32})::Cvoid
+    get_irbem_ntime_max1!(NTIME_MAX)
 end
 
 include("lib.jl")
@@ -54,5 +54,6 @@ include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")
 include("coordinates.jl")
+include("info.jl")
 
 end
