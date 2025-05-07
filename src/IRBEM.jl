@@ -30,6 +30,7 @@ export MagneticField
 export make_lstar, get_field_multi, get_mlt
 export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
+export transform
 
 # Physical constants
 const Re = 6371.0  # Earth radius in km
@@ -49,5 +50,6 @@ include("types.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")
+include("coordinates.jl")
 
 end # module

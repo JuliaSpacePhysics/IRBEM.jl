@@ -127,6 +127,25 @@ end
     @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1e-2
 end
 
+@testitem "Coords transform (single/multi entry)" begin
+    using Dates, IRBEM
+
+    # Single entry: GEO→GEO
+    time = DateTime(1996, 8, 28, 16, 46)
+    pos = [6.90274, -1.63624, 1.91669]
+    @test transform(time, pos, "GEO", "GEO") == pos
+    @test transform(time, pos, "GEO" => "GEO") == pos
+    @test transform(time, pos, "geo2geo") == pos
+
+    # Multi entry: GEO→MAG
+    times = [DateTime(1996, 8, 28, 16, 46), DateTime(1996, 8, 28, 16, 46)]
+    poses = [[6.90274, -1.63624, 1.91669] [6.90274, -1.63624, 1.91669]]
+    multi_result = transform(times, poses, "GEO", "MAG")
+    @info "Multi entry GEO→MAG" multi_result
+    @test multi_result[:, 1] == multi_result[:, 2]
+    @test size(multi_result) == size(poses)
+end
+
 @testitem "Utility functions" begin
     using Dates
 

@@ -5,22 +5,44 @@ Extract datetime from input dictionary X.
 Supports 'dateTime' or 'Time' keys with DateTime or String values.
 """
 function get_datetime(X::Dict)
-    if haskey(X, "dateTime")
-        dt_val = X["dateTime"]
-    elseif haskey(X, "Time")
-        dt_val = X["Time"]
-    else
+    # Extract date/time value (scalar or array)
+    dt_val = haskey(X, "dateTime") ? X["dateTime"] : haskey(X, "Time") ? X["Time"] : nothing
+    if dt_val === nothing
         error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
     end
-
-    if isa(dt_val, DateTime)
+    # Handle array or scalar
+    if isa(dt_val, AbstractArray)
+        return [isa(dt, DateTime) ? dt : DateTime(dt) for dt in dt_val]
+    elseif isa(dt_val, DateTime)
         return dt_val
     elseif isa(dt_val, String)
         return DateTime(dt_val)
     else
-        error("Date/time value must be a DateTime or String, got $(typeof(dt_val))")
+        error("Date/time value must be a DateTime, String, or Array thereof, got $(typeof(dt_val))")
     end
 end
+
+function decompose_time(dt::AbstractVector)
+    iyear = Int32.(year.(dt))
+    idoy = Int32.(dayofyear.(dt))
+    ut = Float64.(hour.(dt) * 3600 + minute.(dt) * 60 + second.(dt) + millisecond.(dt) / 1000)
+    iyear, idoy, ut
+end
+
+function prepare_time(dt::AbstractVector)
+    ntime = Int32(length(dt))
+    ntime, decompose_time(dt)...
+end
+
+prepare_time(dt::DateTime) = prepare_time([dt])
+
+function process_coords(X::Dict)
+    x1 = X["x1"] isa Number ? [Float64(X["x1"])] : convert(Vector{Float64}, X["x1"])
+    x2 = X["x2"] isa Number ? [Float64(X["x2"])] : convert(Vector{Float64}, X["x2"])
+    x3 = X["x3"] isa Number ? [Float64(X["x3"])] : convert(Vector{Float64}, X["x3"])
+    return x1, x2, x3
+end
+
 
 """
     process_coords_time(X::Dict)
@@ -29,64 +51,9 @@ Process coordinates and time from input dictionary X.
 Returns ntime, iyear, idoy, ut, x1, x2, x3 arrays for IRBEM functions.
 """
 function process_coords_time(X::Dict)
-    # Handle array or scalar inputs
-    if any(isa(X[k], AbstractArray) for k in ["x1", "x2", "x3"] if haskey(X, k))
-        # Array input
-        if haskey(X, "dateTime") && isa(X["dateTime"], AbstractArray)
-            ntime = length(X["dateTime"])
-        elseif haskey(X, "Time") && isa(X["Time"], AbstractArray)
-            ntime = length(X["Time"])
-        else
-            ntime = length(X["x1"])
-        end
-
-        # Initialize arrays
-        iyear = zeros(Int32, ntime)
-        idoy = zeros(Int32, ntime)
-        ut = zeros(Float64, ntime)
-        x1 = zeros(Float64, ntime)
-        x2 = zeros(Float64, ntime)
-        x3 = zeros(Float64, ntime)
-
-        # Process each time point
-        for i in 1:ntime
-            # Extract datetime
-            if haskey(X, "dateTime")
-                dt_val = isa(X["dateTime"], AbstractArray) ? X["dateTime"][i] : X["dateTime"]
-            else
-                dt_val = isa(X["Time"], AbstractArray) ? X["Time"][i] : X["Time"]
-            end
-
-            # Convert to DateTime if needed
-            dt = isa(dt_val, DateTime) ? dt_val : DateTime(dt_val)
-
-            # Set time values
-            iyear[i] = year(dt)
-            idoy[i] = dayofyear(dt)
-            ut[i] = hour(dt) * 3600 + minute(dt) * 60 + second(dt)
-
-            # Set coordinate values
-            x1[i] = isa(X["x1"], AbstractArray) ? X["x1"][i] : X["x1"]
-            x2[i] = isa(X["x2"], AbstractArray) ? X["x2"][i] : X["x2"]
-            x3[i] = isa(X["x3"], AbstractArray) ? X["x3"][i] : X["x3"]
-        end
-    else
-        # Scalar input
-        ntime = 1
-
-        # Get datetime
-        dt = get_datetime(X)
-
-        # Initialize arrays
-        iyear = [Int32(year(dt))]
-        idoy = [Int32(dayofyear(dt))]
-        ut = [Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt))]
-        x1 = [Float64(X["x1"])]
-        x2 = [Float64(X["x2"])]
-        x3 = [Float64(X["x3"])]
-    end
-
-    return Int32(ntime), iyear, idoy, ut, x1, x2, x3
+    ntime, iyear, idoy, ut = prepare_time(get_datetime(X))
+    x1, x2, x3 = process_coords(X)
+    return ntime, iyear, idoy, ut, x1, x2, x3
 end
 
 """
@@ -163,7 +130,7 @@ Coordinate systems:
 Returns the corresponding integer code.
 """
 function coord_sys(axes)
-    lookup_table = Dict(
+    lookup_table = Dict{String,Int32}(
         "GDZ" => 0,
         "GEO" => 1,
         "GSM" => 2,
@@ -180,6 +147,18 @@ function coord_sys(axes)
 end
 
 coord_sys(x::Integer) = Int32(x)
+
+function parse_coord_transform(s::String)
+    # Accept formats like "geo2gsm", "GEO2GSM", "geo_to_gsm", etc.
+    s_clean = replace(s, "_to_" => "2")
+    if occursin("2", s_clean)
+        parts = split(s_clean, "2")
+        if length(parts) == 2
+            return parts[1], parts[2]
+        end
+    end
+    error("Could not parse coordinate system conversion string: '$s'. Expected format like 'geo2gsm'.")
+end
 
 # Helper functions for relativistic calculations
 """
