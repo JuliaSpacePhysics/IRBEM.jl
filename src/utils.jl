@@ -42,7 +42,8 @@ function prepare_irbem(model::MagneticField, X, maginput=Dict())
     )
 end
 
-function decompose_time(dt::AbstractVector)
+function decompose_time(x::AbstractVector)
+    dt = DateTime.(x)
     iyear = Int32.(year.(dt))
     idoy = Int32.(dayofyear.(dt))
     ut = Float64.(hour.(dt) * 3600 + minute.(dt) * 60 + second.(dt) + millisecond.(dt) / 1000)
@@ -69,6 +70,7 @@ function prepare_loc(x1, x2, x3)
 end
 
 prepare_loc(x::AbstractArray) = prepare_loc(x[1, :], x[2, :], x[3, :])
+prepare_loc(x::AbstractVector{<:AbstractVector}) = prepare_loc([getindex.(x, i) for i in 1:3]...)
 prepare_loc(X::Dict) = prepare_loc(X["x1"], X["x2"], X["x3"])
 
 

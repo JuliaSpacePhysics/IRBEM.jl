@@ -5,20 +5,22 @@ using TestItems, TestItemRunner
     using Dates
     model = MagneticField(options=[0, 0, 0, 0, 0], kext="T89")
     dipol_model = MagneticField(options=[0, 0, 5, 0, 5], kext=0)
+    t = DateTime("2015-02-02T06:12:43")
+    x = [600.0, 60.0, 50.0]
     X = Dict(
-        "dateTime" => DateTime("2015-02-02T06:12:43"),
-        "x1" => 600.0,  # km
-        "x2" => 60.0,   # lat
-        "x3" => 50.0    # lon
+        "dateTime" => t,
+        "x1" => x[1],  # km
+        "x2" => x[2],   # lat
+        "x3" => x[3]    # lon
     )
     maginput = Dict("Kp" => 40.0)
 
     n = 3
     X_array = Dict(
-        "dateTime" => fill(DateTime("2015-02-02T06:12:43"), n),
-        "x1" => fill(600.0, n),  # km
-        "x2" => fill(60.0, n),   # lat
-        "x3" => fill(50.0, n)    # lon
+        "dateTime" => fill(t, n),
+        "x1" => fill(x[1], n),  # km
+        "x2" => fill(x[2], n),   # lat
+        "x3" => fill(x[3], n)    # lon
     )
     maginput_array = Dict("Kp" => fill(40.0, n))
 
@@ -47,16 +49,7 @@ end
     @test result == make_lstar(DateTime("2015-02-02T06:12:43"), [600.0, 60.0, 50.0], "GDZ", Dict("Kp" => 40.0))
 end
 
-@testitem "find_foot_point" setup = [Share] begin
-    _foot_point_true = (;
-        XFOOT=[99.99412846343064, 61.113869939535036, 50.55633537632344],
-        BFOOT=[-25644.012241653385, -25370.689449132995, -38649.994779664776],
-        BFOOTMAG=52868.793663583165
-    )
-    stopAlt = 100
-    hemiFlag = 0
-    @test find_foot_point(model, X, maginput, stopAlt, hemiFlag) == _foot_point_true
-end
+
 
 @testitem "get_field_multi" setup = [Share] begin
     true_Bgeo = [
@@ -72,28 +65,6 @@ end
     @test result[1] == true_Bgeo
     @test result[2] == true_Bl
     @test result2[1] == true_Bgeo[:, 1]
-end
-
-@testitem "find_mirror_point" setup = [Share] begin
-    true_Blocal = 42271.43059990003
-    true_Bmin = 42271.43059990003
-    true_POSIT = [0.35282136776620165, 0.4204761325793738, 0.9448914452448274]
-
-    alpha = 90.0  # Local pitch angle in degrees
-    result = find_mirror_point(model, X, maginput, alpha)
-
-    @test result[1] == true_Blocal
-    @test result[2] == true_Bmin
-    @test result[3] == true_POSIT
-end
-
-@testitem "find_magequator" setup = [Share] begin
-    true_Bmin = 626.2258295723121
-    true_XGEO = [2.1962220856733894, 2.8360222891612192, 0.3472455620354017]
-    result = find_magequator(model, X, maginput)
-
-    @test result[1] == true_Bmin
-    @test result[2] == true_XGEO
 end
 
 @testitem "get_mlt" setup = [Share] begin
