@@ -1,3 +1,5 @@
+_vec(x) = [x]
+_vec(x::AbstractVector) = x
 _only(x) = length(x) == 1 ? x[1] : x
 _only(A::AbstractMatrix) = size(A, 2) == 1 ? A[:, 1] : A
 
@@ -25,12 +27,29 @@ function get_datetime(X::Dict)
     end
 end
 
+prepare_irbem(time, x, coord="GDZ", maginput=Dict(); kext=KEXT[], options=OPTIONS[]) = (
+    ntime(time), parse_kext(kext), options, coord_sys(coord),
+    decompose_time(time)..., prepare_loc(x)...,
+    prepare_maginput(maginput)
+)
+
+function prepare_irbem(model::MagneticField, X, maginput=Dict())
+    time = get_datetime(X)
+    return (
+        ntime(time), model.kext, model.options, model.sysaxes,
+        decompose_time(time)..., prepare_loc(X)...,
+        prepare_maginput(maginput)
+    )
+end
+
 function decompose_time(dt::AbstractVector)
     iyear = Int32.(year.(dt))
     idoy = Int32.(dayofyear.(dt))
     ut = Float64.(hour.(dt) * 3600 + minute.(dt) * 60 + second.(dt) + millisecond.(dt) / 1000)
     iyear, idoy, ut
 end
+
+decompose_time(dt) = decompose_time(_vec(dt))
 
 function prepare_time(dt::AbstractVector)
     ntime = Int32(length(dt))
@@ -39,12 +58,18 @@ end
 
 prepare_time(dt::DateTime) = prepare_time([dt])
 
-function process_coords(X::Dict)
-    x1 = X["x1"] isa Number ? [Float64(X["x1"])] : convert(Vector{Float64}, X["x1"])
-    x2 = X["x2"] isa Number ? [Float64(X["x2"])] : convert(Vector{Float64}, X["x2"])
-    x3 = X["x3"] isa Number ? [Float64(X["x3"])] : convert(Vector{Float64}, X["x3"])
-    return x1, x2, x3
+ntime(time) = Int32(1)
+ntime(time::AbstractVector) = Int32(length(time))
+
+function prepare_loc(x1, x2, x3)
+    _x1 = x1 isa Number ? [Float64(x1)] : convert(Vector{Float64}, x1)
+    _x2 = x2 isa Number ? [Float64(x2)] : convert(Vector{Float64}, x2)
+    _x3 = x3 isa Number ? [Float64(x3)] : convert(Vector{Float64}, x3)
+    _x1, _x2, _x3
 end
+
+prepare_loc(x::AbstractArray) = prepare_loc(x[1, :], x[2, :], x[3, :])
+prepare_loc(X::Dict) = prepare_loc(X["x1"], X["x2"], X["x3"])
 
 
 """
@@ -55,7 +80,7 @@ Returns ntime, iyear, idoy, ut, x1, x2, x3 arrays for IRBEM functions.
 """
 function process_coords_time(X::Dict)
     ntime, iyear, idoy, ut = prepare_time(get_datetime(X))
-    x1, x2, x3 = process_coords(X)
+    x1, x2, x3 = prepare_loc(X)
     return ntime, iyear, idoy, ut, x1, x2, x3
 end
 
@@ -65,7 +90,7 @@ end
 Process magnetic field model inputs from input dictionary.
 Returns a properly formatted array for IRBEM functions.
 """
-function prepare_maginput(maginput::Dict, ntime)
+function prepare_maginput(maginput::Dict, ntime=nothing)
     # IRBEM expects a 25-element array for maginput
     maginput_array = zeros(Float64, 25)
 

@@ -38,12 +38,13 @@ end
 
 @testitem "make_lstar" setup = [Share] begin
     l_star_true = (
-        Lm=3.5597242229067536, MLT=10.170297893176182,
+        Lm=3.5597242229067536, Lstar=-1e+31,
         Blocal=42271.43059990003, Bmin=626.2258295723121,
-        Lstar=-1e+31, XJ=7.020585390925573
+        XJ=7.020585390925573, MLT=10.170297893176182
     )
     result = make_lstar(model, X, maginput)
     @test result == l_star_true
+    @test result == make_lstar(DateTime("2015-02-02T06:12:43"), [600.0, 60.0, 50.0], "GDZ", Dict("Kp" => 40.0))
 end
 
 @testitem "find_foot_point" setup = [Share] begin

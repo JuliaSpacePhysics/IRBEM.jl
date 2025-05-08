@@ -1,79 +1,38 @@
 """
-    make_lstar(model::MagneticField, X::Dict, maginput::Dict)
+    make_lstar($SIG1)
+    make_lstar($SIG2)
 
 Compute magnetic coordinates at a spacecraft position.
 
 # Arguments
-- `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
-  - `dateTime` or `Time`: Date and time (DateTime or String)
-  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-- `maginput::Dict`: Dictionary with magnetic field model inputs
+$SIG_DOC
 
 # Returns
 - `NamedTuple`: Contains fields Lm, MLT, Blocal, Bmin, Lstar, and XJ
 """
-function make_lstar(model::MagneticField, X::Dict, maginput::Dict)
-    # Process input coordinates and time
-    ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-
-    # Check if ntime exceeds NTIME_MAX
-    if ntime > NTIME_MAX[]
-        throw(ArgumentError("Number of time steps ($ntime) exceeds NTIME_MAX ($NTIME_MAX[])"))
-    end
-
-    # Process magnetic field model inputs
-    maginput_array = prepare_maginput(maginput, ntime)
-
-    # Initialize output arrays
+function make_lstar(ntime::Int32, args...)
     Lm, Lstar, Blocal, Bmin, XJ, MLT = [zeros(Float64, ntime) for _ in 1:6]
-
-    # Call IRBEM library function using @ccall
-    sysaxes = model.sysaxes
-    kext = model.kext
-    options = model.options
-    make_lstar1!(
-        ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, # inputs
-        Lm, Lstar, Blocal, Bmin, XJ, MLT # outputs
-    )
-    return map(_only, (; Lm, MLT, Blocal, Bmin, Lstar, XJ))
+    make_lstar1!(ntime, args..., Lm, Lstar, Blocal, Bmin, XJ, MLT)
+    return map(_only, (; Lm, Lstar, Blocal, Bmin, XJ, MLT))
 end
 
-
 """
-    get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
+    get_field_multi($SIG1)
+    get_field_multi($SIG2)
 
 Compute the GEO vector of the magnetic field at input location for a set of internal/external magnetic field.
 
 # Arguments
-- `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
-  - `dateTime` or `Time`: Date and time (DateTime or String)
-  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-- `maginput::Dict`: Dictionary with magnetic field model inputs
+$SIG_DOC
 
 # Returns
 - `NamedTuple`: Contains fields Bgeo (GEO components of B field) and Bmag (magnitude of B field)
 """
-function get_field_multi(model::MagneticField, X::Dict, maginput::Dict)
-    # Process input coordinates and time
-    ntime, iyear, idoy, ut, x1, x2, x3 = process_coords_time(X)
-
-    # Process magnetic field model inputs
-    maginput_array = prepare_maginput(maginput, ntime)
-
+function get_field_multi(ntime::Int32, args...)
     # Initialize output arrays
     Bgeo = zeros(Float64, (3, ntime))
     Bmag = zeros(Float64, ntime)
-
-    # Call IRBEM library function using @ccall
-    kext = model.kext
-    options = model.options
-    sysaxes = model.sysaxes
-    get_field_multi!(
-        ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, # inputs
-        Bgeo, Bmag # outputs
-    )
+    get_field_multi!(ntime, args..., Bgeo, Bmag)
     return map(_only, (; Bgeo, Bmag))
 end
 
@@ -96,4 +55,8 @@ function get_mlt(X::Dict)
     mlt = Ref{Float64}(0.0)
     get_mlt1!(iyear, idoy, ut, xgeo, mlt)
     return mlt[]
+end
+
+for f in (:make_lstar, :get_field_multi)
+    @eval $f(args...; kwargs...) = $f(prepare_irbem(args...; kwargs...)...)
 end

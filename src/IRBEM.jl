@@ -1,6 +1,8 @@
 """
 A wrapper for International Radiation Belt Environment Modeling (IRBEM) library
 
+See the [Documentation](https://beforerr.github.io/IRBEM.jl/dev/) for more information.
+
 # Functions
 
 ## Computing magnetic field coordinates
@@ -31,6 +33,7 @@ A wrapper for International Radiation Belt Environment Modeling (IRBEM) library
 # References
 - [IRBEM Documentation](https://prbem.github.io/IRBEM/)
 - [IRBEM GitHub](https://github.com/PRBEM/IRBEM)
+- [spacepy.irbempy](https://spacepy.github.io/autosummary/spacepy.irbempy.html)
 """
 module IRBEM
 using Dates
@@ -44,18 +47,38 @@ export transform
 export get_igrf_version, irbem_fortran_version, irbem_fortran_release
 
 const NTIME_MAX = Ref{Int32}()
+const KEXT = Ref{String}("T89")
+const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
+
+const SIG1 = """time, x, coord="GDZ", maginput=Dict(); kext=KEXT[], options=OPTIONS[]"""
+const SIG2 = """model::MagneticField, X, maginput=Dict()"""
+const SIG_DOC = """
+## Signature 1:
+- `time`: Date and time (DateTime, Vector{DateTime}, or String)
+- `x`: Position coordinates as a 3×n array or a tuple/vector of vectors
+- `coord`: String specifying the coordinate system (default: "GDZ")
+- `kext`: External field model selection (optional)
+- `options`: Model options (optional)
+## Signature 2:
+- `model::MagneticField`: The magnetic field model
+- `X`: Dictionary with keys:
+  - `dateTime` or `Time`: Date and time (DateTime or String)
+  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
+## Common arguments:
+- `maginput`: Dictionary with magnetic field model inputs (optional)
+"""
 
 # External magnetic field model lookup table
 const EXT_MODELS = ["None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T96",
-    "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
+  "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
 
 function __init__()
-    get_irbem_ntime_max1!(NTIME_MAX)
+  get_irbem_ntime_max1!(NTIME_MAX)
 end
 
 include("lib.jl")
-include("utils.jl")
 include("types.jl")
+include("utils.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")
