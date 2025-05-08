@@ -16,6 +16,34 @@ get_mlt1!(iyear, idoy, ut, xgeo, mlt) =
         mlt::Ref{Float64}
     )::Cvoid
 
+# Points of interest on the field line
+find_mirror_point1!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, alpha, Blocal, Bmirr, posit) =
+    @ccall libirbem.find_mirror_point1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        alpha::Ref{Float64}, maginput::Ptr{Float64},
+        Blocal::Ref{Float64}, Bmirr::Ref{Float64}, posit::Ptr{Float64}
+    )::Cvoid
+
+find_foot_point1!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, stop_alt, hemi_flag, BFOOTMAG, XFOOT, BFOOT) =
+    @ccall libirbem.find_foot_point1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        stop_alt::Ref{Float64}, hemi_flag::Ref{Int32}, maginput::Ptr{Float64},
+        XFOOT::Ptr{Float64}, BFOOT::Ptr{Float64}, BFOOTMAG::Ptr{Float64}
+    )::Cvoid
+
+find_magequator1!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, Bmin, XGEO) =
+    @ccall libirbem.find_magequator1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        maginput::Ptr{Float64},
+        Bmin::Ref{Float64}, XGEO::Ptr{Float64}
+    )::Cvoid
+
 # Magnetic field computation
 get_field_multi!(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, Bgeo, Bmag) =
     @ccall libirbem.get_field_multi_(
