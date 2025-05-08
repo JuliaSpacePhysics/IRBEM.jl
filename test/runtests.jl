@@ -67,6 +67,11 @@ end
     @test result2[1] == true_Bgeo[:, 1]
 end
 
+@testitem "get_bderivs" setup = [Share] begin
+    @test_nowarn get_bderivs(model, X, 0.1, maginput)
+    @test get_bderivs(model, X, 0.1, maginput) == get_bderivs("2015-02-02T06:12:43", [600.0, 60.0, 50.0], 0.1, "GDZ", Dict("Kp" => 40.0))
+end
+
 @testitem "get_mlt" setup = [Share] begin
     # Corresponds to test_get_mlt in Python
     input_dict = Dict(

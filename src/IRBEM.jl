@@ -7,18 +7,19 @@ See the [Documentation](https://beforerr.github.io/IRBEM.jl/dev/) for more infor
 
 ## Computing magnetic field coordinates
 - [`make_lstar`](@ref): Compute magnetic coordinates at a spacecraft position
+- [`get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
 
 ## Points of interest on the field line
 - [`find_mirror_point`](@ref): Find magnitude and location of mirror point along field line
 - [`find_foot_point`](@ref): Find footprint of field line in a given hemisphere
-- [`trace_field_line`](@ref): Trace a full field line crossing the input position
 - [`find_magequator`](@ref): Find coordinates of magnetic equator from field line tracing
 
 ## Magnetic field computation
 - [`get_field_multi`](@ref): Compute GEO vector of magnetic field at input location
-- [`get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
+- [`get_bderivs`](@ref): Compute the magnetic field and its 1st-order derivatives at each input location
 
 ## Field tracing
+- [`trace_field_line`](@ref): Trace a full field line crossing the input position
 - [`drift_shell`](@ref): Trace a full drift shell for particles with mirror point at input location
 - [`drift_bounce_orbit`](@ref): Trace a full bounce orbit for particles with mirror point at input location
 
@@ -41,6 +42,7 @@ using IRBEM_jll
 
 export MagneticField
 export make_lstar, get_field_multi, get_mlt
+export get_bderivs
 export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
 export transform
