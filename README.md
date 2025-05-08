@@ -1,5 +1,8 @@
 # IRBEM.jl
 
+[![Build Status](https://github.com/Beforerr/IRBEM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Beforerr/IRBEM.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://Beforerr.github.io/IRBEM.jl/dev/) 
+
 A Julia wrapper for the IRBEM (International Radiation Belt Environment Modeling) Fortran library.
 
 ## Overview
@@ -15,14 +18,12 @@ Pkg.add("https://github.com/Beforerr/IRBEM.jl")
 
 ## Features
 
-- Compute magnetic coordinates at spacecraft positions
-- Trace drift shells for particles
-- Find mirror points along field lines
-- Find footprints of field lines
-- Trace complete field lines
-- Find magnetic equator coordinates
-- Compute magnetic field vectors
-- Calculate Magnetic Local Time (MLT)
+- Computing magnetic field coordinates
+- Find points of interest on the field line
+- Compute magnetic field, derivatives and gradients
+- Field tracing
+- Coordinates transformations
+- Flexible interface (Multiple dispatch with Fortran-style, Python-style, and Julia-style)
 
 ## Usage
 
