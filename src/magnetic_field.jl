@@ -9,6 +9,11 @@ $SIG_DOC
 
 # Returns
 - `NamedTuple`: Contains fields Lm, MLT, Blocal, Bmin, Lstar, and XJ
+
+# Examples
+```jldoctest
+julia> make_lstar("2015-02-02T06:12:43", [600.0, 60.0, 50.0], "GDZ", Dict("Kp" => 40.0))
+(Lm = 3.5597242229067536, Lstar = -1.0e31, Blocal = 42271.43059990003, Bmin = 626.2258295723121, XJ = 7.020585390925573, MLT = 10.170297893176182)
 """
 function make_lstar(ntime::Int32, args...)
     Lm, Lstar, Blocal, Bmin, XJ, MLT = [zeros(Float64, ntime) for _ in 1:6]
