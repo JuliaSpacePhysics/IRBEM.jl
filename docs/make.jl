@@ -1,7 +1,7 @@
 using Documenter
 using IRBEM
 
-DocMeta.setdocmeta!(IRBEM, :DocTestSetup, :(using IRBEM); recursive=true)
+DocMeta.setdocmeta!(IRBEM, :DocTestSetup, :(using IRBEM; using PrettyPrinting); recursive=true)
 
 makedocs(
     sitename="IRBEM.jl",

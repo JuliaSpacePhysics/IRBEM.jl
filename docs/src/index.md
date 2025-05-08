@@ -2,6 +2,10 @@
 
 Julia wrapper for the IRBEM (International Radiation Belt Environment Modeling)
 
+```@docs
+IRBEM
+```
+
 # API Reference
 
 ## Computing magnetic field coordinates
