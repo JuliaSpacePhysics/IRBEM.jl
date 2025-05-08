@@ -45,13 +45,23 @@ find_magequator1!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput,
     )::Cvoid
 
 # Magnetic field computation
-get_field_multi!(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput_array, Bgeo, Bmag) =
+get_field_multi!(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, Bgeo, Bmag) =
     @ccall libirbem.get_field_multi_(
         ntime::Ref{Int32},
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
         x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
-        maginput_array::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64}
+        maginput::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64}
+    )::Cvoid
+
+get_bderivs!(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, dX, Bgeo, Bmag, gradBmag, diffB) =
+    @ccall libirbem.get_bderivs_(
+        ntime::Ref{Int32},
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32}, dX::Ref{Float64},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        maginput::Ptr{Float64}, Bgeo::Ptr{Float64}, Bmag::Ptr{Float64},
+        gradBmag::Ptr{Float64}, diffB::Ptr{Float64}
     )::Cvoid
 
 # Coordinate transformations
