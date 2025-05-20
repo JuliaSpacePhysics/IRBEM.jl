@@ -13,7 +13,7 @@ The IRBEM library is a set of source codes dedicated to radiation belt modeling.
 
 ```julia
 using Pkg
-Pkg.add("https://github.com/Beforerr/IRBEM.jl")
+Pkg.add("IRBEM")
 ```
 
 ## Features
