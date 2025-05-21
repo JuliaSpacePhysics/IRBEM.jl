@@ -81,6 +81,7 @@ end
 include("lib.jl")
 include("types.jl")
 include("utils.jl")
+include("const.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")
