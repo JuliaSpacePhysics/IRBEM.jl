@@ -167,7 +167,10 @@ function coord_sys(axes)
 end
 
 coord_sys(x::Integer) = Int32(x)
+coord_sys(::Type{S}) where {S<:AbstractCoordinateSystem} = coord_sys(String(S))
+coord_sys(x::AbstractCoordinateSystem) = coord_sys(String(x))
 
+parse_coord_transform(pair) = pair[1], pair[2]
 function parse_coord_transform(s::String)
     # Accept formats like "geo2gsm", "GEO2GSM", "geo_to_gsm", etc.
     s_clean = replace(s, "_to_" => "2")
