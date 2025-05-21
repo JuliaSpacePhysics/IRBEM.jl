@@ -1,6 +1,11 @@
 using TestItems, TestItemRunner
 @run_package_tests
 
+@testitem "Aqua" begin
+    using Aqua
+    Aqua.test_all(IRBEM)
+end
+
 @testsnippet Share begin
     using Dates
     model = MagneticField(options=[0, 0, 0, 0, 0], kext="T89")
