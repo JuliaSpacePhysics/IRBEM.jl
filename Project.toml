@@ -1,7 +1,7 @@
 name = "IRBEM"
 uuid = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
 authors = ["Zijin Zhang <zzj956959688@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
