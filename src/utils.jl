@@ -43,10 +43,10 @@ function prepare_irbem(model::MagneticField, X, maginput=Dict())
 end
 
 function decompose_time(x::AbstractVector)
-    dt = DateTime.(x)
-    iyear = Int32.(year.(dt))
-    idoy = Int32.(dayofyear.(dt))
-    ut = Float64.(hour.(dt) * 3600 + minute.(dt) * 60 + second.(dt) + millisecond.(dt) / 1000)
+    dt = eltype(x) <: DateTime ? x : DateTime.(x)
+    iyear = @. Int32(year(dt))
+    idoy = @. Int32(dayofyear(dt))
+    ut = @. Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt) + millisecond(dt) / 1000)
     iyear, idoy, ut
 end
 

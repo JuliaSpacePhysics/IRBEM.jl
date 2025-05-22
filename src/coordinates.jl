@@ -23,7 +23,7 @@ function transform(time, pos, in, out)
     size(pos, 1) != 3 && error("Position array must of shape (3, n), got size ", size(pos))
 
     # Prepare call arguments
-    pos_in = Array{Float64}(pos)
+    pos_in = convert(Array{Float64}, pos)
     pos_out = similar(pos_in)
     ntime, iyear, idoy, ut = prepare_time(time)
     sys_in = coord_sys(in)
