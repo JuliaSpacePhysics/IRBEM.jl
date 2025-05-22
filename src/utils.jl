@@ -87,6 +87,28 @@ function process_coords_time(X::Dict)
 end
 
 """
+    with_case_variants(dict::Dict{S, V}) where {S <: AbstractString, V}
+
+Creates a new dictionary with both uppercase and lowercase variants of each key.
+The original keys and values are preserved, and lowercase/uppercase variants are added.
+
+Example:
+```julia
+original = Dict("ABC" => 1, "DEF" => 2)
+result = with_case_variants(original)
+# result has keys: "ABC", "abc", "DEF", "def"
+```
+"""
+function with_case_variants(dict)
+    result = copy(dict)
+    for (key, value) in dict
+        result[lowercase(key)] = value
+        result[uppercase(key)] = value
+    end
+    return result
+end
+
+"""
     prepare_maginput(maginput::Dict, ntime::Int)
 
 Process magnetic field model inputs from input dictionary.
@@ -95,27 +117,6 @@ Returns a properly formatted array for IRBEM functions.
 function prepare_maginput(maginput::Dict, ntime=nothing)
     # IRBEM expects a 25-element array for maginput
     maginput_array = zeros(Float64, 25)
-
-    # Map of parameter names to indices in the maginput array
-    param_indices = Dict(
-        "Kp" => 1,
-        "Dst" => 2,
-        "dens" => 3,
-        "velo" => 4,
-        "Pdyn" => 5,
-        "ByIMF" => 6,
-        "BzIMF" => 7,
-        "G1" => 8,
-        "G2" => 9,
-        "G3" => 10,
-        "W1" => 11,
-        "W2" => 12,
-        "W3" => 13,
-        "W4" => 14,
-        "W5" => 15,
-        "W6" => 16,
-        "AL" => 17
-    )
 
     # Fill the array with values from the input dictionary
     for (param, idx) in param_indices
@@ -160,24 +161,16 @@ Coordinate systems:
 Returns the corresponding integer code.
 """
 function coord_sys(axes)
-    lookup_table = Dict{String,Int32}(
-        "GDZ" => 0,
-        "GEO" => 1,
-        "GSM" => 2,
-        "GSE" => 3,
-        "SM" => 4,
-        "GEI" => 5,
-        "MAG" => 6,
-        "SPH" => 7,
-        "RLL" => 8
-    )
-    get(lookup_table, uppercase(axes)) do
+    get(coord_sys_lookup, axes) do
         error("Unknown coordinate system: $axes. Choose from GDZ, GEO, GSM, GSE, SM, GEI, MAG, SPH, RLL.")
     end
 end
 
 coord_sys(x::Integer) = Int32(x)
+coord_sys(::Type{S}) where {S<:AbstractCoordinateSystem} = coord_sys(String(S))
+coord_sys(x::AbstractCoordinateSystem) = coord_sys(String(x))
 
+parse_coord_transform(pair) = pair[1], pair[2]
 function parse_coord_transform(s::String)
     # Accept formats like "geo2gsm", "GEO2GSM", "geo_to_gsm", etc.
     s_clean = replace(s, "_to_" => "2")

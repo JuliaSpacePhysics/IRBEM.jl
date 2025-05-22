@@ -39,6 +39,7 @@ See the [Documentation](https://beforerr.github.io/IRBEM.jl/dev/) for more infor
 module IRBEM
 using Dates
 using IRBEM_jll
+using SmallCollections
 
 export MagneticField
 export make_lstar, get_field_multi, get_mlt
@@ -81,6 +82,7 @@ end
 include("lib.jl")
 include("types.jl")
 include("utils.jl")
+include("const.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")

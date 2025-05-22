@@ -12,6 +12,8 @@ using IRBEM
 
 time = DateTime(2020, 1, 1)
 pos = [6.90274, -1.63624, 1.91669]
+
+GSM(time, GEO(pos))
 transform(time, pos, "GEO", "GSM")
 transform(time, pos, "GEO" => "GSM")
 transform(time, pos, "geo2gsm")
@@ -31,5 +33,12 @@ function transform(time, pos, in, out)
     return isa(time, Array) ? pos_out : vec(pos_out)
 end
 
-transform(time, pos, pair) = transform(time, pos, pair[1], pair[2])
-transform(time, pos, s::String) = transform(time, pos, parse_coord_transform(s)...)
+transform(time, pos, inout) = transform(time, pos, parse_coord_transform(inout)...)
+
+(::Type{S})(time, pos::CoordinateVector) where {S<:AbstractCoordinateSystem} =
+    S(transform(time, pos, pos.sym, S))
+
+
+# transform(time, pos::CoordinateVector, out) = transform(time, pos, pos.sym, out)
+# transform(time, pos::CoordinateVector, ::Type{S}) where {S<:AbstractCoordinateSystem} =
+#     S(transform(time, pos, pos.sym, S))
