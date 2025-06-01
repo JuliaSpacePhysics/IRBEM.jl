@@ -79,25 +79,20 @@ function get_bderivs(arg1, arg2, dX, args...; kw...)
 end
 
 """
-    get_mlt(model::MagneticField, X::Dict)
+    get_mlt(𝐫, time)
+    get_mlt(x, y, z, time)
 
-Get Magnetic Local Time (MLT) from a Cartesian GEO position and date.
-
-# Arguments
-- `model::MagneticField`: The magnetic field model
-- `X::Dict`: Dictionary with keys:
-  - `dateTime` or `Time`: Date and time (DateTime or String)
-  - `x1`, `x2`, `x3`: Position coordinates in GEO system
+Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 """
-function get_mlt(X::Dict)
-    _, iyear, idoy, ut, _, _, _ = process_coords_time(X)
-    xgeo = Float64[X["x1"], X["x2"], X["x3"]]
-
-    # Initialize output
+function get_mlt(𝐫, time)
+    iyear, idoy, ut = decompose_time(time)
+    xgeo = convert(Array{Float64}, 𝐫)
     mlt = Ref{Float64}(0.0)
     get_mlt1!(iyear, idoy, ut, xgeo, mlt)
     return mlt[]
 end
+
+get_mlt(x, y, z, time) = get_mlt(SA[x, y, z], time)
 
 for f in (:make_lstar, :get_field_multi)
     @eval $f(args...; kwargs...) = $f(prepare_irbem(args...; kwargs...)...)
