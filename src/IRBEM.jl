@@ -40,6 +40,7 @@ module IRBEM
 using Dates
 using IRBEM_jll
 using SmallCollections
+using StaticArrays
 
 export MagneticField
 export make_lstar, get_field_multi, get_mlt

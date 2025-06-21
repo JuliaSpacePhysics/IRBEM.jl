@@ -31,3 +31,5 @@ const _coord_sys_lookup = Dict(
 )
 
 const coord_sys_lookup = with_case_variants(_coord_sys_lookup)
+# For symbols
+const coord_sys_lookup_sym = NamedTuple(Symbol(k)=>v for (k,v) in coord_sys_lookup)

@@ -8,8 +8,8 @@ end
 
 @testsnippet Share begin
     using Dates
-    model = MagneticField(options=[0, 0, 0, 0, 0], kext="T89")
-    dipol_model = MagneticField(options=[0, 0, 5, 0, 5], kext=0)
+    model = MagneticField(options = [0, 0, 0, 0, 0], kext = "T89")
+    dipol_model = MagneticField(options = [0, 0, 5, 0, 5], kext = 0)
     t = DateTime("2015-02-02T06:12:43")
     x = [600.0, 60.0, 50.0]
     X = Dict(
@@ -45,15 +45,14 @@ end
 
 @testitem "make_lstar" setup = [Share] begin
     l_star_true = (
-        Lm=3.5597242229067536, Lstar=-1e+31,
-        Blocal=42271.43059990003, Bmin=626.2258295723121,
-        XJ=7.020585390925573, MLT=10.170297893176182
+        Lm = 3.5597242229067536, Lstar = -1.0e+31,
+        Blocal = 42271.43059990003, Bmin = 626.2258295723121,
+        XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
     result = make_lstar(model, X, maginput)
     @test result == l_star_true
     @test result == make_lstar(DateTime("2015-02-02T06:12:43"), [600.0, 60.0, 50.0], "GDZ", Dict("Kp" => 40.0))
 end
-
 
 
 @testitem "get_field_multi" setup = [Share] begin
@@ -87,28 +86,32 @@ end
     )
     true_MLT = 9.56999052595853
     @test get_mlt(input_dict) == true_MLT
+    @test get_mlt(input_dict) == true_MLT
+
+    using Chairmarks
+    @info "Benchmark `get_mlt`" @b get_mlt($input_dict)
 end
 
 @testitem "drift_shell" setup = [Share] begin
     using NaNStatistics
     res = drift_shell(dipol_model, X, maginput)
     Lm = res.Lm
-    @test Lm ≈ 4.326679 atol = 1e-2
+    @test Lm ≈ 4.326679 atol = 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
-    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1e-2
+    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1.0e-2
 end
 
 @testitem "drift_bounce_orbit" setup = [Share] begin
     using NaNStatistics
     res = drift_bounce_orbit(dipol_model, X, maginput)
     Lm = res.Lm
-    @test Lm ≈ 4.326679 atol = 1e-2
+    @test Lm ≈ 4.326679 atol = 1.0e-2
     alt = X["x1"]
     # hmin is not available; skip or set to alt for test parity
     hmin = alt  # Placeholder
-    @test abs((hmin - alt) / alt) <= 1e-2
+    @test abs((hmin - alt) / alt) <= 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
-    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1e-2
+    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1.0e-2
 end
 
 @testitem "Coords transform (single/multi entry)" begin
@@ -128,6 +131,12 @@ end
     @info "Multi entry GEO→MAG" multi_result
     @test multi_result[:, 1] == multi_result[:, 2]
     @test size(multi_result) == size(poses)
+
+    using Chairmarks
+    @info "Benchmark `transform` (single entry)" @b transform($time, $pos, :GEO, :GEO), 
+        transform($time, $pos, "GEO", "GEO")
+    @info "Benchmark `transform` (multi entry)" @b transform($times, $poses, :GEO, :MAG), 
+        transform($times, $poses, "GEO", "MAG")
 end
 
 @testitem "Utility functions" begin
@@ -137,8 +146,8 @@ end
     @test IRBEM.parse_kext("OPQ77") == 5
     @test IRBEM.parse_kext(5) == 5
 
-    @test IRBEM.beta(100.0) ≈ 0.5482 atol = 1e-4
-    @test IRBEM.gamma(100.0) ≈ 1.1956 atol = 1e-4
+    @test IRBEM.beta(100.0) ≈ 0.5482 atol = 1.0e-4
+    @test IRBEM.gamma(100.0) ≈ 1.1956 atol = 1.0e-4
 
     # Test coordinate system lookup
     @test IRBEM.coord_sys("GDZ") == 0

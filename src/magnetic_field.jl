@@ -85,14 +85,14 @@ end
 Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 """
 function get_mlt(𝐫, time)
-    iyear, idoy, ut = decompose_time(time)
-    xgeo = convert(Array{Float64}, 𝐫)
+    iyear, idoy, ut = decompose_time_s(time)
+    xgeo = vecf(𝐫)
     mlt = Ref{Float64}(0.0)
     get_mlt1!(iyear, idoy, ut, xgeo, mlt)
     return mlt[]
 end
 
-get_mlt(x, y, z, time) = get_mlt(SA[x, y, z], time)
+get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
 
 for f in (:make_lstar, :get_field_multi)
     @eval $f(args...; kwargs...) = $f(prepare_irbem(args...; kwargs...)...)

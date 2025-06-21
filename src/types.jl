@@ -14,12 +14,12 @@ end
 
 abstract type AbstractCoordinateSystem end
 
-struct CoordinateVector{T,C} <: AbstractFixedVector{3,T}
-    t::NTuple{3,T}
+struct CoordinateVector{T,C} <: FieldVector{3,T}
+    x::T
+    y::T
+    z::T
     sym::C
 end
-
-CoordinateVector(x, y, z, sym) = CoordinateVector((x, y, z), sym)
 
 for sys in (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :J2000)
     @eval struct $sys <: AbstractCoordinateSystem end
