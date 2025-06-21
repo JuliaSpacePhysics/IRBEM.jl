@@ -1,3 +1,5 @@
+@inline vecf(x) = eltype(x) == Float64 ? x : convert(Vector{Float64}, x)
+@inline arrf(x) = eltype(x) == Float64 ? x : convert(Array{Float64}, x)
 _vec(x) = [x]
 _vec(x::AbstractVector) = x
 _only(x) = length(x) == 1 ? x[1] : x
@@ -41,6 +43,20 @@ function prepare_irbem(model::MagneticField, X, maginput=Dict())
         prepare_maginput(maginput)
     )
 end
+
+"""
+    decompose_time_s(dt::DateTime)
+
+Decompose a single DateTime into year, day of year, and UT.
+"""
+function decompose_time_s(dt::DateTime)
+    iyear = Int32(year(dt))
+    idoy = Int32(dayofyear(dt))
+    ut = Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt) + millisecond(dt) / 1000)
+    iyear, idoy, ut
+end
+
+decompose_time_s(dt) = decompose_time_s(DateTime(dt))
 
 function decompose_time(x::AbstractVector)
     dt = eltype(x) <: DateTime ? x : DateTime.(x)
@@ -163,6 +179,12 @@ Returns the corresponding integer code.
 function coord_sys(axes)
     get(coord_sys_lookup, axes) do
         error("Unknown coordinate system: $axes. Choose from GDZ, GEO, GSM, GSE, SM, GEI, MAG, SPH, RLL.")
+    end
+end
+
+function coord_sys(x::Symbol)
+    get(coord_sys_lookup_sym, x) do
+        error("Unknown coordinate system: $x. Choose from GDZ, GEO, GSM, GSE, SM, GEI, MAG, SPH, RLL.")
     end
 end
 

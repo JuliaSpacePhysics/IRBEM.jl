@@ -48,6 +48,12 @@ drift_bounce_orbit
 transform
 ```
 
+## Python interface
+
+```@docs
+IRBEM.PythonAPI
+```
+
 ## Library information
 
 ```@autodocs

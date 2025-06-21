@@ -23,14 +23,14 @@ function transform(time, pos, in, out)
     size(pos, 1) != 3 && error("Position array must of shape (3, n), got size ", size(pos))
 
     # Prepare call arguments
-    pos_in = convert(Array{Float64}, pos)
+    pos_in = arrf(pos)
     pos_out = similar(pos_in)
     ntime, iyear, idoy, ut = prepare_time(time)
     sys_in = coord_sys(in)
     sys_out = coord_sys(out)
     coord_trans_vec1!(ntime, sys_in, sys_out, iyear, idoy, ut, pos_in, pos_out)
 
-    return isa(time, Array) ? pos_out : vec(pos_out)
+    return isa(time, AbstractVector) ? pos_out : vec(pos_out)
 end
 
 transform(time, pos, inout) = transform(time, pos, parse_coord_transform(inout)...)
