@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/JuliaSpacePhysics/IRBEM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaSpacePhysics/IRBEM.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/JuliaSpacePhysics/IRBEM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaSpacePhysics/IRBEM.jl)
 
-A Julia wrapper for the IRBEM (International Radiation Belt Environment Modeling) Fortran library.
+A Julia wrapper for the [IRBEM (International Radiation Belt Environment Modeling) Fortran library](https://prbem.github.io/IRBEM/).
 
 ## Overview
 

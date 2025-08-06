@@ -102,7 +102,7 @@ function drift_bounce_orbit(model::MagneticField, X, maginput; alpha=90, R0=1)
     @ccall libirbem.drift_bounce_orbit2_1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
-        x1::Ref{Float64}, x2::Ref{Float64}, x3::Ref{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         alpha::Ref{Float64}, maginput_array::Ptr{Float64},
         R0::Ref{Float64}, Lm::Ref{Float64}, Lstar::Ref{Float64},
         Blocal::Ptr{Float64}, Bmin::Ref{Float64}, Bmirr::Ref{Float64},
@@ -163,7 +163,7 @@ function drift_shell(model::MagneticField, X, maginput)
     @ccall libirbem.drift_shell1_(
         kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
         iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
-        x1::Ref{Float64}, x2::Ref{Float64}, x3::Ref{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
         maginput_array::Ptr{Float64},
         Lm::Ref{Float64}, Lstar::Ref{Float64},
         Blocal::Ptr{Float64}, Bmin::Ref{Float64},

@@ -18,7 +18,8 @@ end
         "x2" => x[2],   # lat
         "x3" => x[3]    # lon
     )
-    maginput = Dict("Kp" => 40.0)
+    maginput = Dict(:Kp => 40.0)
+    maginput_nt = (; Kp = 40.0)
 
     n = 3
     X_array = Dict(
@@ -49,9 +50,14 @@ end
         Blocal = 42271.43059990003, Bmin = 626.2258295723121,
         XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
-    result = make_lstar(model, X, maginput)
-    @test result == l_star_true
-    @test result == make_lstar(DateTime("2015-02-02T06:12:43"), [600.0, 60.0, 50.0], "GDZ", Dict("Kp" => 40.0))
+    @test make_lstar(model, X, maginput) == l_star_true
+    @test make_lstar(t, x, "GDZ", Dict("Kp" => 40.0)) == l_star_true
+    @test make_lstar(t, GDZ(x), maginput_nt) == l_star_true
+
+    using Chairmarks
+    @info "Benchmark `make_lstar`" @b(make_lstar($model, $X, $maginput))  @b(make_lstar($t, $x, "GDZ", $maginput))  @b(make_lstar($t, $GDZ(x), $maginput_nt))
+    @info "Benchmark `make_lstar`" @b(make_lstar([$t, $t], [$x, $x], "GDZ", $maginput))
+    @info make_lstar([t, t], [x, x], "GDZ", maginput) #TODO: why the result is not the same as the above?
 end
 
 
@@ -133,9 +139,9 @@ end
     @test size(multi_result) == size(poses)
 
     using Chairmarks
-    @info "Benchmark `transform` (single entry)" @b transform($time, $pos, :GEO, :GEO), 
+    @info "Benchmark `transform` (single entry)" @b transform($time, $pos, :GEO, :GEO),
         transform($time, $pos, "GEO", "GEO")
-    @info "Benchmark `transform` (multi entry)" @b transform($times, $poses, :GEO, :MAG), 
+    @info "Benchmark `transform` (multi entry)" @b transform($times, $poses, :GEO, :MAG),
         transform($times, $poses, "GEO", "MAG")
 end
 
@@ -150,7 +156,7 @@ end
     @test IRBEM.gamma(100.0) ≈ 1.1956 atol = 1.0e-4
 
     # Test coordinate system lookup
-    @test IRBEM.coord_sys("GDZ") == 0
+    @test IRBEM.coord_sys("GDZ") == IRBEM.coord_sys(GDZ) == 0
     @test IRBEM.coord_sys("GEO") == 1
     @test IRBEM.coord_sys("GSM") == 2
 

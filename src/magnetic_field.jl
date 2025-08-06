@@ -17,9 +17,9 @@ julia> make_lstar("2015-02-02T06:12:43", [600.0, 60.0, 50.0], "GDZ", Dict("Kp" =
 ```
 """
 function make_lstar(ntime::Int32, args...)
-    Lm, Lstar, Blocal, Bmin, XJ, MLT = [zeros(Float64, ntime) for _ in 1:6]
-    make_lstar1!(ntime, args..., Lm, Lstar, Blocal, Bmin, XJ, MLT)
-    return map(_only, (; Lm, Lstar, Blocal, Bmin, XJ, MLT))
+    nt = NamedTuple{(:Lm, :Lstar, :Blocal, :Bmin, :XJ, :MLT)}(ntuple(_ -> zeros(Float64, ntime), 6))
+    make_lstar1!(ntime, args..., nt...)
+    return ntime == 1 ? map(_first, nt) : nt
 end
 
 """
@@ -36,20 +36,19 @@ $SIG_DOC
 """
 function get_field_multi(ntime::Int32, args...)
     # Initialize output arrays
-    Bgeo = zeros(Float64, (3, ntime))
-    Bmag = zeros(Float64, ntime)
-    get_field_multi!(ntime, args..., Bgeo, Bmag)
-    return map(_only, (; Bgeo, Bmag))
+    nt = (; Bgeo = zeros(Float64, (3, ntime)), Bmag = zeros(Float64, ntime))
+    get_field_multi!(ntime, args..., nt...)
+    return ntime == 1 ? map(_first, nt) : nt
 end
 
 function get_bderivs(ntime::Int32, args...)
     # Initialize output arrays
-    Bgeo = zeros(Float64, (3, ntime))
-    Bmag = zeros(Float64, ntime)
-    gradBmag = zeros(Float64, (3, ntime))
-    diffB = zeros(Float64, (3, 3, ntime))
-    get_bderivs!(ntime, args..., Bgeo, Bmag, gradBmag, diffB)
-    return map(_only, (; Bgeo, Bmag, gradBmag, diffB))
+    nt = (;
+        Bgeo = zeros(Float64, (3, ntime)), Bmag = zeros(Float64, ntime),
+        gradBmag = zeros(Float64, (3, ntime)), diffB = zeros(Float64, (3, 3, ntime)),
+    )
+    get_bderivs!(ntime, args..., nt...)
+    return ntime == 1 ? map(_first, nt) : nt
 end
 
 """
