@@ -24,7 +24,7 @@ end
 for sys in (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :J2000)
     @eval struct $sys <: AbstractCoordinateSystem end
     @eval $sys(x, y, z) = CoordinateVector(x, y, z, $sys())
-    @eval $sys(x) = CoordinateVector(x..., $sys())
+    @eval $sys(x) = (@assert length(x) == 3; CoordinateVector(x[1], x[2], x[3], $sys()))
     @eval export $sys
     @eval Base.String(::Type{$sys}) = $(String(sys))
 end
@@ -33,4 +33,5 @@ end
 """ GSM
 
 coord(v::CoordinateVector) = v.sym
+coord_sys(v::CoordinateVector) = coord_sys(v.sym)
 Base.String(::S) where {S<:AbstractCoordinateSystem} = String(S)
