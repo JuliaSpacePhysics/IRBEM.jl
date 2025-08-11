@@ -98,6 +98,12 @@ end
     @info "Benchmark `get_mlt`" @b get_mlt($input_dict)
 end
 
+@testitem "trace_field_line" setup = [Share] begin
+    @test_nowarn trace_field_line(model, X, maginput)
+    @test trace_field_line(model, X, maginput) == trace_field_line(t, GDZ(x), maginput_nt)
+    @info trace_field_line(model, X, maginput)
+end
+
 @testitem "drift_shell" setup = [Share] begin
     using NaNStatistics
     res = drift_shell(dipol_model, X, maginput)
