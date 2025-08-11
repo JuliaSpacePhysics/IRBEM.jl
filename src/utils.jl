@@ -1,4 +1,5 @@
 const SF64 = Scalar{Float64}
+const RF64 = Ref{Float64}
 
 @inline vecf(x) = eltype(x) == Float64 ? x : convert(Vector{Float64}, x)
 vecf(x::Number) = SF64(x)
@@ -9,6 +10,9 @@ _first(x::AbstractVector) = x[1]
 _first(A::AbstractMatrix) = A[:, 1]
 _first(A::AbstractArray{T, 3}) where {T} = A[:, :, 1]
 
+_deref(x::Ref) = x[]
+_deref(x) = x
+
 """
     get_datetime(X::Dict)
 
@@ -16,21 +20,8 @@ Extract datetime from input dictionary X.
 Supports 'dateTime' or 'Time' keys with DateTime or String values.
 """
 function get_datetime(X::Dict)
-    # Extract date/time value (scalar or array)
-    dt_val = haskey(X, "dateTime") ? X["dateTime"] : haskey(X, "Time") ? X["Time"] : nothing
-    if dt_val === nothing
-        error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
-    end
-    # Handle array or scalar
-    if isa(dt_val, AbstractArray)
-        return [isa(dt, DateTime) ? dt : DateTime(dt) for dt in dt_val]
-    elseif isa(dt_val, DateTime)
-        return dt_val
-    elseif isa(dt_val, String)
-        return DateTime(dt_val)
-    else
-        error("Date/time value must be a DateTime, String, or Array thereof, got $(typeof(dt_val))")
-    end
+    dt_val = get(X, "dateTime", get(X, "Time", nothing))
+    return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
 end
 
 prepare_irbem(time, x, coord = "GDZ", maginput = Dict(); kext = KEXT[], options = OPTIONS[]) = (

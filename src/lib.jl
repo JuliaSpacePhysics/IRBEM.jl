@@ -72,6 +72,44 @@ coord_trans_vec1!(ntime, sys_in, sys_out, iyear, idoy, ut, pos_in, pos_out) =
         pos_in::Ptr{Float64}, pos_out::Ptr{Float64}
     )::Cvoid
 
+# [Field tracing](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#field-tracing)
+trace_field_line2_1_!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, R0, Lm, Blocal, Bmin, XJ, posit, Nposit) =
+    @ccall libirbem.trace_field_line2_1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ptr{Int32}, idoy::Ptr{Int32}, ut::Ptr{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        maginput::Ptr{Float64}, R0::Ref{Float64},
+        Lm::Ref{Float64}, Blocal::Ptr{Float64}, Bmin::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ref{Int32}
+    )::Cvoid
+
+drift_bounce_orbit2_1_!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, alpha, maginput, R0, Lm, Lstar, Blocal, Bmin, Bmirr, XJ, posit, Nposit, hmin, hmin_lon) =
+    @ccall libirbem.drift_bounce_orbit2_1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        alpha::Ref{Float64}, maginput::Ptr{Float64},
+        R0::Ref{Float64}, Lm::Ref{Float64}, Lstar::Ref{Float64},
+        Blocal::Ptr{Float64}, Bmin::Ref{Float64}, Bmirr::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ptr{Int32},
+        hmin::Ref{Float64}, hmin_lon::Ref{Float64}
+    )::Cvoid
+
+# twist the arguments order
+drift_bounce_orbit2_1_!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, alpha::Float64, R0, Lm, Lstar, Blocal, Bmin, Bmirr, XJ, posit, Nposit, hmin, hmin_lon) =
+    drift_bounce_orbit2_1_!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, alpha, maginput, R0, Lm, Lstar, Blocal, Bmin, Bmirr, XJ, posit, Nposit, hmin, hmin_lon)
+
+drift_shell1_!(kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput, Lm, Lstar, Blocal, Bmin, XJ, posit, Nposit) =
+    @ccall libirbem.drift_shell1_(
+        kext::Ref{Int32}, options::Ptr{Int32}, sysaxes::Ref{Int32},
+        iyear::Ref{Int32}, idoy::Ref{Int32}, ut::Ref{Float64},
+        x1::Ptr{Float64}, x2::Ptr{Float64}, x3::Ptr{Float64},
+        maginput::Ptr{Float64},
+        Lm::Ref{Float64}, Lstar::Ref{Float64},
+        Blocal::Ptr{Float64}, Bmin::Ref{Float64},
+        XJ::Ref{Float64}, posit::Ptr{Float64}, Nposit::Ptr{Int32}
+    )::Cvoid
+
 # Library information functions
 """
 Returns the size of time dimension in inputs and/or output arrays for some of the routines.
