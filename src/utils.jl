@@ -1,7 +1,11 @@
 const SF64 = Scalar{Float64}
 const RF64 = Ref{Float64}
 
-@inline vecf(x) = eltype(x) == Float64 ? x : convert(Vector{Float64}, x)
+# https://docs.julialang.org/en/v1/base/c/#Base.unsafe_convert
+# We should make sure the input is a c-contiguous Float64 array
+@inline vecf(x::Vector{Float64}) = x
+@inline vecf(x) = convert(Vector{Float64}, x)
+@inline vecf(x::StaticArray) = eltype(x) == Float64 ? x : Float64.(x)
 vecf(x::Number) = SF64(x)
 @inline arrf(x) = eltype(x) == Float64 ? x : convert(Array{Float64}, x)
 _vec(x) = [x]

@@ -1,15 +1,22 @@
 name = "IRBEM"
 uuid = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
 authors = ["Zijin Zhang <zzj956959688@gmail.com>"]
-version = "0.1.3"
+version = "0.1.4"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 IRBEM_jll = "65aecb69-0b26-50c5-b061-de07bd15962b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[weakdeps]
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+
+[extensions]
+IRBEMDimensionalDataExt = "DimensionalData"
+
 [compat]
 Dates = "1"
+DimensionalData = "0.29"
 IRBEM_jll = "5.0.0"
 StaticArrays = "1.9"
 julia = "1.10"
