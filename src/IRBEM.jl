@@ -1,7 +1,7 @@
 """
 A wrapper for International Radiation Belt Environment Modeling (IRBEM) library
 
-See the [Documentation](https://beforerr.github.io/IRBEM.jl/dev/) for more information.
+See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for more information.
 
 # Functions
 

@@ -15,5 +15,5 @@ makedocs(
 )
 
 deploydocs(
-    repo="github.com/Beforerr/IRBEM.jl",
+    repo="github.com/JuliaSpacePhysics/IRBEM.jl",
 )
