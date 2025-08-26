@@ -125,15 +125,15 @@ function with_case_variants(dict)
 end
 
 _get_param(maginput::Dict{K, V}, param, default = nothing) where {K, V} = get(maginput, K(param), default)
-_get_param(maginput::NamedTuple, param, default = nothing) = hasproperty(maginput, param) ? getproperty(maginput, param) : default
+_get_param(maginput, param, default = nothing) = get(maginput, param, default)
 
 """
-    prepare_maginput(maginput, ntime::Int)
+    prepare_maginput(maginput)
 
 Process magnetic field model inputs from input dictionary.
 Returns a properly formatted array for IRBEM functions.
 """
-function prepare_maginput(maginput, ntime = nothing)
+function prepare_maginput(maginput)
     # IRBEM expects a 25-element array for maginput
     out = MVector{25, Float64}(undef)
     # Fill the array with values from the input dictionary
