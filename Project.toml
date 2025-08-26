@@ -8,8 +8,15 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 IRBEM_jll = "65aecb69-0b26-50c5-b061-de07bd15962b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
+[weakdeps]
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+
+[extensions]
+IRBEMDimensionalDataExt = "DimensionalData"
+
 [compat]
 Dates = "1"
+DimensionalData = "0.29"
 IRBEM_jll = "5.0.0"
 StaticArrays = "1.9"
 julia = "1.10"
