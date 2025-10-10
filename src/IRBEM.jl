@@ -41,7 +41,7 @@ using Dates
 using IRBEM_jll
 using StaticArrays
 
-export MagneticField
+export MagInput, MagneticField
 export make_lstar, get_field_multi, get_mlt
 export get_bderivs
 export find_mirror_point, find_magequator, find_foot_point
@@ -53,30 +53,35 @@ const NTIME_MAX = Ref{Int32}()
 const KEXT = Ref{String}("T89")
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
-const SIG1 = """time, x, coord="GDZ", maginput=Dict(); kext=KEXT[], options=OPTIONS[]"""
-const SIG2 = """model::MagneticField, X, maginput=Dict()"""
+const SIG1 = """time, x, [coord="GDZ",] maginput=(; ); kext=KEXT[], options=OPTIONS[]"""
+const SIG2 = """model::MagneticField, X, maginput=(; )"""
 const SIG_DOC = """
-## Signature 1:
+## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
-- `x`: Position coordinates as a 3×n array or a tuple/vector of vectors
-- `coord`: String specifying the coordinate system (default: "GDZ")
-- `kext`: External field model selection (optional)
-- `options`: Model options (optional)
+- `x`:  Position coordinates as a 3×n array or a tuple/vector of vectors.
+      If the element type of `x` is `CoordinateVector`, `coord` is not needed.
+- `coord` (optional): String specifying the coordinate system (default: "GDZ")
+- `kext` (optional): External field model selection (default: KEXT[])
+- `options` (optional): Model options (default: OPTIONS[])
+
 ## Signature 2:
 - `model::MagneticField`: The magnetic field model
 - `X`: Dictionary with keys:
   - `dateTime` or `Time`: Date and time (DateTime or String)
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
+
 ## Common arguments:
-- `maginput`: Dictionary with magnetic field model inputs (optional)
+- `maginput`: Named tuple or dictionary or `MagInput` with magnetic field model inputs (optional)
 """
 
 # External magnetic field model lookup table
-const EXT_MODELS = ["None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T96",
-  "OM97", "T01", "T01S", "T04", "A00", "T07", "MT"]
+const EXT_MODELS = [
+    "None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T96",
+    "OM97", "T01", "T01S", "T04", "A00", "T07", "MT",
+]
 
 function __init__()
-  get_irbem_ntime_max1!(NTIME_MAX)
+    return get_irbem_ntime_max1!(NTIME_MAX)
 end
 
 include("lib.jl")

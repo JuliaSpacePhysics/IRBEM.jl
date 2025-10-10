@@ -12,7 +12,7 @@ _vec(x) = [x]
 _vec(x::AbstractVector) = x
 _first(x::AbstractVector) = x[1]
 _first(A::AbstractMatrix) = A[:, 1]
-_first(A::AbstractArray{T, 3}) where {T} = A[:, :, 1]
+_first(A::AbstractArray{T,3}) where {T} = A[:, :, 1]
 
 _deref(x::Ref) = x[]
 _deref(x) = x
@@ -28,19 +28,19 @@ function get_datetime(X::Dict)
     return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
 end
 
-prepare_irbem(time, x, coord = "GDZ", maginput = Dict(); kext = KEXT[], options = OPTIONS[]) = (
+prepare_irbem(time, x, coord="GDZ", maginput=Dict(); kext=KEXT[], options=OPTIONS[]) = (
     ntime(time), parse_kext(kext), options, coord_sys(coord),
     decompose_time(time)..., prepare_loc(x)...,
     prepare_maginput(maginput),
 )
 
-prepare_irbem(time, x::CoordinateVector, maginput = (;); kext = KEXT[], options = OPTIONS[]) = (
+prepare_irbem(time, x::CoordinateVector, maginput=(;); kext=KEXT[], options=OPTIONS[]) = (
     ntime(time), parse_kext(kext), options, coord_sys(x),
     decompose_time(time)..., prepare_loc(x)...,
     prepare_maginput(maginput),
 )
 
-function prepare_irbem(model::MagneticField, X::AbstractDict, maginput = Dict())
+function prepare_irbem(model::MagneticField, X::AbstractDict, maginput=Dict())
     time = get_datetime(X)
     return (
         ntime(time), model.kext, model.options, model.sysaxes,
@@ -124,8 +124,8 @@ function with_case_variants(dict)
     return result
 end
 
-_get_param(maginput::Dict{K, V}, param, default = nothing) where {K, V} = get(maginput, K(param), default)
-_get_param(maginput, param, default = nothing) = get(maginput, param, default)
+_get_param(maginput::Dict{K,V}, param, default=nothing) where {K,V} = get(maginput, K(param), default)
+_get_param(maginput, param, default=nothing) = get(maginput, param, default)
 
 """
     prepare_maginput(maginput)
@@ -134,16 +134,23 @@ Process magnetic field model inputs from input dictionary.
 Returns a properly formatted array for IRBEM functions.
 """
 function prepare_maginput(maginput)
-    # IRBEM expects a 25-element array for maginput
-    out = MVector{25, Float64}(undef)
-    # Fill the array with values from the input dictionary
-    for (idx, param) in enumerate(param_indices)
-        val = _get_param(maginput, param, 0)
-        # If array input, use the first value
-        out[idx] = Float64(first(val))
+    return if isempty(maginput)
+        out = MVector{25,Float64}(undef)
+        fill!(out, -9999.0)
+    else
+        first_val = first(values(maginput))
+        if first_val isa AbstractArray
+            nTime = length(first_val)
+            out = Matrix{Float64}(undef, 25, nTime)
+            for (idx, param) in enumerate(param_indices)
+                val = _get_param(maginput, param, 0)
+                out[idx, :] .= Float64.(val)
+            end
+        else
+            out = MagInput(maginput)
+        end
+        out
     end
-
-    return out
 end
 
 
@@ -184,8 +191,9 @@ function coord_sys(x::Symbol)
 end
 
 coord_sys(x::Integer) = Int32(x)
-coord_sys(::Type{S}) where {S <: AbstractCoordinateSystem} = coord_sys(nameof(S))
+coord_sys(::Type{S}) where {S<:AbstractCoordinateSystem} = coord_sys(nameof(S))
 coord_sys(x::AbstractCoordinateSystem) = coord_sys(typeof(x))
+coord_sys(::Type{GDZ}) = 0
 
 parse_coord_transform(pair) = pair[1], pair[2]
 function parse_coord_transform(s::String)
@@ -207,7 +215,7 @@ end
 Calculate relativistic beta (v/c) for a particle with kinetic energy Ek.
 Ek and Erest must be in the same units (default is keV).
 """
-beta(Ek, Erest = 511.0) = sqrt(1 - ((Ek / Erest) + 1)^(-2))
+beta(Ek, Erest=511.0) = sqrt(1 - ((Ek / Erest) + 1)^(-2))
 
 """
     gamma(Ek, Erest=511.0)
@@ -215,7 +223,7 @@ beta(Ek, Erest = 511.0) = sqrt(1 - ((Ek / Erest) + 1)^(-2))
 Calculate relativistic gamma factor for a particle with kinetic energy Ek.
 Ek and Erest must be in the same units (default is keV).
 """
-gamma(Ek, Erest = 511.0) = 1 / sqrt(1 - beta(Ek, Erest)^2)
+gamma(Ek, Erest=511.0) = 1 / sqrt(1 - beta(Ek, Erest)^2)
 
 """
     vparallel(Ek, Bm, B, Erest=511.0)
@@ -225,7 +233,7 @@ at a location with magnetic field B, with mirror point field Bm.
 Ek and Erest must be in the same units (default is keV).
 Returns velocity in m/s.
 """
-vparallel(Ek, Bm, B, Erest = 511.0) = c * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
+vparallel(Ek, Bm, B, Erest=511.0) = c * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
 
 """
     clean_posit!(posit, Nposit)
@@ -234,7 +242,7 @@ Remove trailing NaN values from the posit array.
 """
 function clean_posit!(posit, Nposit::AbstractVector)
     for (i, n) in enumerate(Nposit)
-        posit[:, (n + 1):end, i] .= NaN
+        posit[:, (n+1):end, i] .= NaN
     end
     return
 end
