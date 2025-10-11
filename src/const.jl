@@ -1,11 +1,3 @@
-# https://prbem.github.io/IRBEM/api/general_information.html#magnetic-field-inputs
-const param_indices = (
-    :Kp, :Dst, :dens, :velo, :Pdyn, :ByIMF, :BzIMF,
-    :G1, :G2, :G3,
-    :W1, :W2, :W3, :W4, :W5, :W6, :AL,
-)
-
-
 const _coord_sys_lookup = Dict(
     "GDZ" => 0,
     "GEO" => 1,

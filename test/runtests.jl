@@ -1,3 +1,5 @@
+# Reference: https://github.com/PRBEM/IRBEM/blob/main/python/IRBEM/test_IRBEM.py
+
 using TestItems, TestItemRunner
 @run_package_tests
 
@@ -51,23 +53,25 @@ end
         XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
     @test make_lstar(model, X, maginput) == l_star_true
-    @test make_lstar(t, x, "GDZ", Dict("Kp" => 40.0)) == l_star_true
+    @test make_lstar(t, x, "GDZ", maginput) == l_star_true
+    @test make_lstar(t, x, :GDZ, maginput_nt) == l_star_true
     @test make_lstar(t, GDZ(x), maginput_nt) == l_star_true
+    @test make_lstar([t, t], [x, x], "GDZ", maginput_array).Lm == fill(l_star_true.Lm, 2)
 
     using Chairmarks
-    @info "Benchmark `make_lstar`" @b(make_lstar($model, $X, $maginput))  @b(make_lstar($t, $x, "GDZ", $maginput))  @b(make_lstar($t, $GDZ(x), $maginput_nt))
+    @info "Benchmark `make_lstar`" @b(make_lstar($model, $X, $maginput))  @b(make_lstar($t, $x, "GDZ", $maginput))  @b(make_lstar($t, GDZ($x), $maginput_nt)) @b(make_lstar($t, GDZ($x), $maginput))
     @info "Benchmark `make_lstar`" @b(make_lstar([$t, $t], [$x, $x], "GDZ", $maginput))
-    @info make_lstar([t, t], [x, x], "GDZ", maginput) #TODO: why the result is not the same as the above?
+    @info make_lstar([t, t], [x, x], "GDZ", maginput_array)
 end
 
 
 @testitem "get_field_multi" setup = [Share] begin
     true_Bgeo = [
-        -21079.764883133903 -21078.12221121894 -21078.12221121894;
-        -21504.21460705096 -21508.430942943523 -21508.430942943523;
-        -29666.24532305791 -29637.46273232981 -29637.46273232981
+        -21079.764883133903 -21079.764883133903 -21079.764883133903;
+        -21504.21460705096 -21504.21460705096 -21504.21460705096;
+        -29666.24532305791 -29666.24532305791 -29666.24532305791
     ]
-    true_Bl = [42271.43059990003, 42252.56246417121, 42252.56246417121]
+    true_Bl = [42271.43059990003, 42271.43059990003, 42271.43059990003]
 
     result = get_field_multi(model, X_array, maginput_array)
     result2 = get_field_multi(model, X, maginput)
@@ -79,23 +83,27 @@ end
 
 @testitem "get_bderivs" setup = [Share] begin
     @test_nowarn get_bderivs(model, X, 0.1, maginput)
-    @test get_bderivs(model, X, 0.1, maginput) == get_bderivs("2015-02-02T06:12:43", [600.0, 60.0, 50.0], 0.1, "GDZ", Dict("Kp" => 40.0))
+    @test get_bderivs(model, X, 0.1, maginput) == get_bderivs(t, GDZ(x), 0.1, maginput_nt)
 end
 
 @testitem "get_mlt" setup = [Share] begin
+
     # Corresponds to test_get_mlt in Python
     input_dict = Dict(
-        "dateTime" => DateTime("2015-02-02T06:12:43"),
+        "dateTime" => t,
         "x1" => 2.195517156287977,
         "x2" => 2.834061428571752,
         "x3" => 0.34759070278576953
     )
+    r = [2.195517156287977, 2.834061428571752, 0.34759070278576953]
+
     true_MLT = 9.56999052595853
     @test get_mlt(input_dict) == true_MLT
     @test get_mlt(input_dict) == true_MLT
+    @test get_mlt(r, t) == true_MLT
 
     using Chairmarks
-    @info "Benchmark `get_mlt`" @b get_mlt($input_dict)
+    @info "Benchmark `get_mlt`" @b get_mlt($input_dict), get_mlt($r, $t)
 end
 
 @testitem "trace_field_line" setup = [Share] begin
