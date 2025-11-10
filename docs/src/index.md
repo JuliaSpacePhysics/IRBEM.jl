@@ -1,12 +1,51 @@
 # IRBEM.jl
 
-Julia wrapper for the IRBEM (International Radiation Belt Environment Modeling)
+Julia wrapper for the [IRBEM](https://prbem.github.io/IRBEM/) (International Radiation Belt Environment Modeling) Fortran library.
 
 ```@docs
 IRBEM
 ```
 
 # API Reference
+
+## External Magnetic Field Models and Model Inputs
+
+See [IRBEM Documentation](https://prbem.github.io/IRBEM/api/general_information.html#external-magnetic-field-model) for more details. Most routines accept a `kext` keyword argument (of integer-like type) which allows the selection of the external magnetic field model.
+
+```@docs
+IRBEM.ExternalFieldModel
+MagInput
+MF75
+TS87
+TL87
+T89
+OPQ77
+OPD88
+T96
+OM97
+T01
+T01S
+T04
+A00
+T07
+MT
+```
+
+## Coordinate systems
+
+See [IRBEM Documentation](https://prbem.github.io/IRBEM/api/general_information.html#coordinate-systems) for more details.
+
+```@docs
+GDZ
+GEO
+GSM
+GSE
+SM
+GEI
+MAG
+SPH
+RLL
+```
 
 ## Computing magnetic field coordinates
 
@@ -56,6 +95,8 @@ IRBEM.PythonAPI
 
 ## Library information
 
-```@autodocs
-Modules = [IRBEM]
+```@docs
+get_igrf_version
+irbem_fortran_version
+irbem_fortran_release
 ```

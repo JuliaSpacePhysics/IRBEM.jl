@@ -13,3 +13,8 @@ const _coord_sys_lookup = Dict(
 const coord_sys_lookup = with_case_variants(_coord_sys_lookup)
 # For symbols
 const coord_sys_lookup_sym = NamedTuple(Symbol(k) => v for (k, v) in coord_sys_lookup)
+
+const NTIME_MAX = let _NTIME_MAX = Ref{Int32}()
+    get_irbem_ntime_max1!(_NTIME_MAX)
+    _NTIME_MAX[]
+end
