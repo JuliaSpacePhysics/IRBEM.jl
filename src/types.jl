@@ -35,7 +35,8 @@ MagInput(nt) = MagInput(; nt...)
 function MagInput(d::AbstractDict)
     out = MagInput()
     for (key, param) in d
-        setfield!(out, key, param)
+        sym = Symbol(key)
+        setfield!(out, sym, convert(Float64, param))
     end
     out
 end
@@ -62,7 +63,7 @@ end
 
 for sys in (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :J2000)
     @eval struct $sys <: AbstractCoordinateSystem end
-    @eval $sys(x, y, z) = CoordinateVector(x, y, z, $sys())
+    @eval $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
     @eval $sys(x) = (@assert length(x) == 3; CoordinateVector(x[1], x[2], x[3], $sys()))
     @eval export $sys
     @eval Base.String(::Type{$sys}) = $(String(sys))
