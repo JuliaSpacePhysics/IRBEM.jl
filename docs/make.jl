@@ -9,6 +9,7 @@ makedocs(
     modules=[IRBEM],
     pages=[
         "Home" => "index.md",
+        "Radiation Belt Modeling" => "mag_model.md",
     ],
     checkdocs=:exports,
     doctest=true

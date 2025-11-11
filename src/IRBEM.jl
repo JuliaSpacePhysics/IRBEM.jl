@@ -50,7 +50,7 @@ export transform
 export get_igrf_version, irbem_fortran_version, irbem_fortran_release
 
 const NTIME_MAX = Ref{Int32}()
-const KEXT = Ref{String}("T89")
+const KEXT = Ref{String}("OPQ77")
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
 const SIG1 = """time, x, [coord="GDZ",] maginput=(; ); kext=KEXT[], options=OPTIONS[]"""

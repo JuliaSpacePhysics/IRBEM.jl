@@ -33,6 +33,9 @@ using IRBEM
 using Dates
 
 # Initialize the magnetic field model
+kext="T89"
+t = DateTime("2015-02-02T06:12:43")
+𝐫 = GDZ(651, 63, 15.9)
 model = MagneticField(kext="T89")
 
 # Define position and time
@@ -47,16 +50,16 @@ X = Dict(
 maginput = Dict("Kp" => 40.0)
 
 # Compute L* and related parameters
-make_lstar(model, X, maginput)
+make_lstar(t, 𝐫, maginput; kext)
 
 # Trace a field line
-trace_field_line(model, X, maginput)
+trace_field_line(t, 𝐫, maginput; kext)
 
 # Find the magnetic equator
-find_magequator(model, X, maginput)
+find_magequator(t, 𝐫, maginput; kext)
 
 # Calculate MLT
-get_mlt(X)
+get_mlt(t, 𝐫)
 ```
 
 ## Coordinate Systems
