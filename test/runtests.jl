@@ -32,6 +32,7 @@ end
         "x3" => fill(x[3], n)    # lon
     )
     maginput_array = Dict("Kp" => fill(40.0, n))
+    maginput_array_nt = (; Kp = fill(40.0, n))
 
     function _compute_dipole_L_shell(posit)
         x = posit[1, :, :]
@@ -82,6 +83,7 @@ end
     @test result[1] == true_Bgeo
     @test result[2] == true_Bl
     @test result2[1] == true_Bgeo[:, 1]
+    @test result == get_field_multi(model, X_array, maginput_array_nt)
 end
 
 @testitem "get_bderivs" setup = [Share] begin

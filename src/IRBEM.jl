@@ -48,9 +48,14 @@ export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
 export transform
 export get_igrf_version, irbem_fortran_version, irbem_fortran_release
+export MF75, TS87, TL87, T89, OPQ77, OPD88, T96, OM97, T01, T01S, T04, A00, T07, MT
 
-const NTIME_MAX = Ref{Int32}()
-const KEXT = Ref{String}("OPQ77")
+include("types.jl")
+include("lib.jl")
+include("utils.jl")
+include("const.jl")
+
+const KEXT = Ref{Int32}(OPQ77)
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
 const SIG1 = """time, x, [coord="GDZ",] maginput=(; ); kext=KEXT[], options=OPTIONS[]"""
@@ -74,20 +79,6 @@ const SIG_DOC = """
 - `maginput`: Named tuple or dictionary or `MagInput` with magnetic field model inputs (optional)
 """
 
-# External magnetic field model lookup table
-const EXT_MODELS = [
-    "None", "MF75", "TS87", "TL87", "T89", "OPQ77", "OPD88", "T96",
-    "OM97", "T01", "T01S", "T04", "A00", "T07", "MT",
-]
-
-function __init__()
-    return get_irbem_ntime_max1!(NTIME_MAX)
-end
-
-include("lib.jl")
-include("types.jl")
-include("utils.jl")
-include("const.jl")
 include("magnetic_field.jl")
 include("find_points.jl")
 include("tracing.jl")

@@ -76,13 +76,13 @@ function get_bderivs(arg1, arg2, dX, args...; kw...)
 end
 
 """
-    get_mlt(time, 𝐫)
-    get_mlt(𝐫::AbstractVector, time)
+    get_mlt(𝐫, time)
+    get_mlt(time, 𝐫::AbstractVector)
     get_mlt(x, y, z, time)
 
 Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 """
-function get_mlt(𝐫::AbstractVector, time)
+function get_mlt(𝐫, time)
     iyear, idoy, ut = decompose_time_s(time)
     xgeo = vecf(𝐫)
     mlt = Ref{Float64}()
