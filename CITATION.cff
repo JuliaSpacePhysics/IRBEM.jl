@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: "IRBEM.jl"
+type: software
+authors:
+  - family-names: Zhang
+    given-names: Zijin
+    email: zijin@ucla.edu
+    orcid: 0000-0002-9968-067X
+license: MIT
+doi: 10.5281/zenodo.17577161
+url: "https://github.com/JuliaSpacePhysics/IRBEM.jl"
+date-released: 2025
+keywords:
+  - Julia
+  - Space physics
+  - Radiation belt

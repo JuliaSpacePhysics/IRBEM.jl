@@ -1,5 +1,7 @@
 # IRBEM.jl
 
+[![DOI](https://zenodo.org/badge/978838161.svg)](https://doi.org/10.5281/zenodo.17577161)
+
 Julia wrapper for the [IRBEM](https://prbem.github.io/IRBEM/) (International Radiation Belt Environment Modeling) Fortran library.
 
 ```@docs
