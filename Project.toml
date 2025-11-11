@@ -1,6 +1,6 @@
 name = "IRBEM"
 uuid = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Zijin Zhang <zzj956959688@gmail.com>"]
 
 [workspace]
