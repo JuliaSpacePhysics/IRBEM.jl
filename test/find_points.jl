@@ -9,7 +9,7 @@
     @test result[1] == true_Blocal
     @test result[2] == true_Bmin
     @test result[3] == true_POSIT
-    @test result == find_mirror_point(t, x, alpha, "GDZ", maginput)
+    @test result == find_mirror_point(t, x, alpha, "GDZ", maginput; kext = "T89")
 end
 
 @testitem "find_magequator" setup = [Share] begin
@@ -23,12 +23,12 @@ end
 
 @testitem "find_foot_point" setup = [Share] begin
     _foot_point_true = (;
-        XFOOT=[99.99412846343064, 61.113869939535036, 50.55633537632344],
-        BFOOT=[-25644.012241653385, -25370.689449132995, -38649.994779664776],
-        BFOOTMAG=52868.793663583165
+        XFOOT = [99.99412846343064, 61.113869939535036, 50.55633537632344],
+        BFOOT = [-25644.012241653385, -25370.689449132995, -38649.994779664776],
+        BFOOTMAG = 52868.793663583165,
     )
     stopAlt = 100
     hemiFlag = 0
     @test find_foot_point(model, X, stopAlt, hemiFlag, maginput) == _foot_point_true
-    @test find_foot_point(t, x, stopAlt, hemiFlag, "GDZ", maginput) == _foot_point_true
+    @test find_foot_point(t, x, stopAlt, hemiFlag, "GDZ", maginput; kext = "T89") == _foot_point_true
 end

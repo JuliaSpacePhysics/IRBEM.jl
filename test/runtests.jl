@@ -10,7 +10,8 @@ end
 
 @testsnippet Share begin
     using Dates
-    model = MagneticField(options = [0, 0, 0, 0, 0], kext = "T89")
+    kext = "T89"
+    model = MagneticField(options = [0, 0, 0, 0, 0], kext = kext)
     dipol_model = MagneticField(options = [0, 0, 5, 0, 5], kext = 0)
     t = DateTime("2015-02-02T06:12:43")
     x = [600.0, 60.0, 50.0]
@@ -47,18 +48,20 @@ end
 end
 
 @testitem "make_lstar" setup = [Share] begin
+    kext = "T89"
     l_star_true = (
         Lm = 3.5597242229067536, Lstar = -1.0e+31,
         Blocal = 42271.43059990003, Bmin = 626.2258295723121,
         XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
     @test make_lstar(model, X, maginput) == l_star_true
-    @test make_lstar(t, x, "GDZ", maginput) == l_star_true
-    @test make_lstar(t, x, :GDZ, maginput_nt) == l_star_true
-    @test make_lstar(t, GDZ(x), maginput_nt) == l_star_true
-    @test make_lstar([t, t], [x, x], "GDZ", maginput_array).Lm == fill(l_star_true.Lm, 2)
+    @test make_lstar(t, x, "GDZ", maginput; kext) == l_star_true
+    @test make_lstar(t, x, :GDZ, maginput_nt; kext) == l_star_true
+    @test make_lstar(t, GDZ(x), maginput_nt; kext) == l_star_true
+    @test make_lstar([t, t], [x, x], "GDZ", maginput_array; kext).Lm == fill(l_star_true.Lm, 2)
 
     using Chairmarks
+    model = MagneticField()
     @info "Benchmark `make_lstar`" @b(make_lstar($model, $X, $maginput))  @b(make_lstar($t, $x, "GDZ", $maginput))  @b(make_lstar($t, GDZ($x), $maginput_nt)) @b(make_lstar($t, GDZ($x), $maginput))
     @info "Benchmark `make_lstar`" @b(make_lstar([$t, $t], [$x, $x], "GDZ", $maginput))
     @info make_lstar([t, t], [x, x], "GDZ", maginput_array)
@@ -83,7 +86,7 @@ end
 
 @testitem "get_bderivs" setup = [Share] begin
     @test_nowarn get_bderivs(model, X, 0.1, maginput)
-    @test get_bderivs(model, X, 0.1, maginput) == get_bderivs(t, GDZ(x), 0.1, maginput_nt)
+    @test get_bderivs(model, X, 0.1, maginput) == get_bderivs(t, GDZ(x), 0.1, maginput_nt; kext)
 end
 
 @testitem "get_mlt" setup = [Share] begin
@@ -100,7 +103,7 @@ end
     true_MLT = 9.56999052595853
     @test get_mlt(input_dict) == true_MLT
     @test get_mlt(input_dict) == true_MLT
-    @test get_mlt(r, t) == true_MLT
+    @test get_mlt(r, t) == get_mlt(t, r) == true_MLT
 
     using Chairmarks
     @info "Benchmark `get_mlt`" @b get_mlt($input_dict), get_mlt($r, $t)
@@ -108,8 +111,7 @@ end
 
 @testitem "trace_field_line" setup = [Share] begin
     @test_nowarn trace_field_line(model, X, maginput)
-    @test trace_field_line(model, X, maginput) == trace_field_line(t, GDZ(x), maginput_nt)
-    @info trace_field_line(model, X, maginput)
+    @test trace_field_line(model, X, maginput) == trace_field_line(t, GDZ(x), maginput_nt; kext)
 end
 
 @testitem "drift_shell" setup = [Share] begin

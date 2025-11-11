@@ -10,7 +10,7 @@ $SIG_DOC
 
 # Examples
 ```jldoctest
-julia> make_lstar("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), (; Kp = 40.0))
+julia> make_lstar("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), (; Kp = 40.0); kext = "T89")
 (Lm = 3.5597242229067536, Lstar = -1.0e31, Blocal = 42271.43059990003, Bmin = 626.2258295723121, XJ = 7.020585390925573, MLT = 10.170297893176182)
 ```
 """
@@ -63,7 +63,7 @@ $SIG_DOC
 
 # Examples
 ```jldoctest
-julia> get_bderivs("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), 0.1, (; Kp = 40.0)) |> pprint
+julia> get_bderivs("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), 0.1, (; Kp = 40.0); kext = "T89") |> pprint
 (Bgeo = [-21079.764883133903, -21504.21460705096, -29666.24532305791],
  Bmag = 42271.43059990003,
  gradBmag = [-49644.37271032293, -46030.37495428827, -83024.03530787815],
@@ -76,12 +76,13 @@ function get_bderivs(arg1, arg2, dX, args...; kw...)
 end
 
 """
-    get_mlt(𝐫, time)
+    get_mlt(time, 𝐫)
+    get_mlt(𝐫::AbstractVector, time)
     get_mlt(x, y, z, time)
 
 Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 """
-function get_mlt(𝐫, time)
+function get_mlt(𝐫::AbstractVector, time)
     iyear, idoy, ut = decompose_time_s(time)
     xgeo = vecf(𝐫)
     mlt = Ref{Float64}()
@@ -90,6 +91,7 @@ function get_mlt(𝐫, time)
 end
 
 get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
+get_mlt(time, 𝐫::AbstractVector) = get_mlt(𝐫, time)
 
 for f in (:make_lstar, :get_field_multi)
     @eval $f(args...; kwargs...) = $f(prepare_irbem(args...; kwargs...)...)
