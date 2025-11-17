@@ -85,5 +85,6 @@ include("tracing.jl")
 include("coordinates.jl")
 include("info.jl")
 include("python.jl")
+include("workload.jl")
 
 end

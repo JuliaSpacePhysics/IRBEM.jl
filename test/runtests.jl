@@ -8,6 +8,13 @@ using TestItems, TestItemRunner
     Aqua.test_all(IRBEM)
 end
 
+@testitem "JET" begin
+    using JET
+    IRBEM.workload()
+    @test_call IRBEM.workload()
+    test_package(IRBEM)
+end
+
 @testsnippet Share begin
     using Dates
     kext = "T89"
