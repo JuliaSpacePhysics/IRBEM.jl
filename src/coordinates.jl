@@ -22,7 +22,12 @@ transform(time, pos, "geo2gsm")
 function transform(time, pos, in, out)
     size(pos, 1) != 3 && error("Position array must of shape (3, n), got size ", size(pos))
 
-    # Prepare call arguments
+    # Validate time dimension matches position dimension
+    npos = ndims(pos) == 1 ? 1 : size(pos, 2)
+    ntime_input = time isa AbstractVector ? length(time) : 1
+    @assert ntime_input == npos "Time dimension ($ntime_input) must match position dimension ($npos)"
+
+    # Prepare call arguments - ensure contiguous arrays for Fortran
     pos_in = arrf(pos)
     pos_out = similar(pos_in)
     ntime, iyear, idoy, ut = prepare_time(time)

@@ -2,12 +2,14 @@ const SF64 = Scalar{Float64}
 const RF64 = Ref{Float64}
 
 # https://docs.julialang.org/en/v1/base/c/#Base.unsafe_convert
-# We should make sure the input is a c-contiguous Float64 array
-@inline vecf(x::Vector{Float64}) = x
+# https://docs.julialang.org/en/v1/manual/conversion-and-promotion/
+# We should make sure the input is a c-contiguous array
+@inline veci(x) = convert(Vector{Int32}, x)
 @inline vecf(x) = convert(Vector{Float64}, x)
 @inline vecf(x::StaticVector{S, T}) where {S, T} = T == Float64 ? x : Float64.(x)
 vecf(x::Number) = SF64(x)
-@inline arrf(x) = eltype(x) == Float64 ? x : convert(Array{Float64}, x)
+@inline arrf(x) = convert(Array{Float64}, x)
+@inline arrf(x::StaticArray{S}) where {S} = convert(StaticArray{S, Float64}, x)
 _first(x::AbstractVector) = x[1]
 _first(A) = selectdim(A, ndims(A), 1)
 
@@ -65,7 +67,7 @@ function decompose_time(x::AbstractVector)
     iyear = @. Int32(year(dt))
     idoy = @. Int32(dayofyear(dt))
     ut = @. Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt) + millisecond(dt) / 1000)
-    return iyear, idoy, ut
+    return veci(iyear), veci(idoy), vecf(ut)
 end
 
 decompose_time(dt) = decompose_time(MVector(dt))
@@ -232,14 +234,14 @@ at a location with magnetic field B, with mirror point field Bm.
 Ek and Erest must be in the same units (default is keV).
 Returns velocity in m/s.
 """
-vparallel(Ek, Bm, B, Erest = 511.0) = 3e8 * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
+vparallel(Ek, Bm, B, Erest = 511.0) = 3.0e8 * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
 
 """
     clean_posit!(posit, Nposit)
 
 Remove trailing NaN values from the posit array.
 """
-function clean_posit!(posit::Array{T, 3}, Nposit::Vector{Int32}) where T
+function clean_posit!(posit::Array{T, 3}, Nposit::Vector{Int32}) where {T}
     for (i, n) in enumerate(Nposit)
         posit[:, (n + 1):end, i] .= T(NaN)
     end
