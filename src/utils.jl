@@ -5,12 +5,11 @@ const RF64 = Ref{Float64}
 # We should make sure the input is a c-contiguous Float64 array
 @inline vecf(x::Vector{Float64}) = x
 @inline vecf(x) = convert(Vector{Float64}, x)
-@inline vecf(x::StaticArray) = eltype(x) == Float64 ? x : Float64.(x)
+@inline vecf(x::StaticVector{S, T}) where {S, T} = T == Float64 ? x : Float64.(x)
 vecf(x::Number) = SF64(x)
 @inline arrf(x) = eltype(x) == Float64 ? x : convert(Array{Float64}, x)
 _first(x::AbstractVector) = x[1]
-_first(A::AbstractMatrix) = A[:, 1]
-_first(A::AbstractArray{T, 3}) where {T} = A[:, :, 1]
+_first(A) = selectdim(A, ndims(A), 1)
 
 _deref(x::Ref) = x[]
 _deref(x) = x
@@ -26,7 +25,7 @@ function get_datetime(X::Dict)
     return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
 end
 
-prepare_irbem(time, x, coord = "GDZ", maginput = Dict(); kext = KEXT[], options = OPTIONS[]) = (
+prepare_irbem(time, x, coord = "GDZ", maginput = Dict{Symbol, Float64}(); kext = KEXT[], options = OPTIONS[]) = (
     ntime(time), parse_kext(kext), options, coord_sys(coord),
     decompose_time(time)..., prepare_loc(x)...,
     prepare_maginput(maginput),
@@ -38,7 +37,7 @@ prepare_irbem(time, x::CoordinateVector, maginput = (;); kext = KEXT[], options 
     prepare_maginput(maginput),
 )
 
-function prepare_irbem(model::MagneticField, X::AbstractDict, maginput = Dict())
+function prepare_irbem(model::MagneticField, X::AbstractDict, maginput = Dict{Symbol, Float64}())
     time = get_datetime(X)
     return (
         ntime(time), model.kext, model.options, model.sysaxes,
@@ -233,16 +232,16 @@ at a location with magnetic field B, with mirror point field Bm.
 Ek and Erest must be in the same units (default is keV).
 Returns velocity in m/s.
 """
-vparallel(Ek, Bm, B, Erest = 511.0) = c * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
+vparallel(Ek, Bm, B, Erest = 511.0) = 3e8 * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
 
 """
     clean_posit!(posit, Nposit)
 
 Remove trailing NaN values from the posit array.
 """
-function clean_posit!(posit, Nposit::AbstractVector)
+function clean_posit!(posit::Array{T, 3}, Nposit::Vector{Int32}) where T
     for (i, n) in enumerate(Nposit)
-        posit[:, (n + 1):end, i] .= NaN
+        posit[:, (n + 1):end, i] .= T(NaN)
     end
     return
 end

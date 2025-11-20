@@ -35,7 +35,7 @@ end
 
 transform(time, pos, inout) = transform(time, pos, parse_coord_transform(inout)...)
 
-(::Type{S})(time, pos::CoordinateVector) where {S<:AbstractCoordinateSystem} =
+(::Type{S})(time, pos::CoordinateVector) where {S <: AbstractCoordinateSystem} =
     S(transform(time, pos, pos.sym, S))
 
 
