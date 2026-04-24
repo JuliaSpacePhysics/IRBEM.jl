@@ -19,7 +19,7 @@ IRBEMDimensionalDataExt = "DimensionalData"
 
 [compat]
 Dates = "1"
-DimensionalData = "0.29"
+DimensionalData = "0.29, 0.30"
 IRBEM_jll = "5.0.0"
 StaticArrays = "1.9"
 julia = "1.10"
