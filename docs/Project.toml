@@ -3,3 +3,6 @@ CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 IRBEM = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
 PrettyPrinting = "54e16d92-306c-5ea0-a30b-337be88ac337"
+
+[compat]
+IRBEM = "0.1.7"
