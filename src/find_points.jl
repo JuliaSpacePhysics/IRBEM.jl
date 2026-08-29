@@ -1,6 +1,4 @@
-"""
-https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#points-of-interest-on-the-field-line
-"""
+# https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#points-of-interest-on-the-field-line
 
 """
     find_mirror_point(time, x, alpha, coord="GDZ", maginput=Dict(); kext=KEXT[], options=OPTIONS[])
@@ -61,7 +59,7 @@ end
     find_magequator($SIG2)
 
 Find the coordinates of the magnetic equator from tracing the magnetic field line from the input location.
-Returns a named tuple with fields Bmin and XGEO (location of magnetic equator in GEO coordinates).
+Returns a named tuple with fields Bmin and XGEO (location of magnetic equator).
 
 # Arguments
 $SIG_DOC

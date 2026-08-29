@@ -1,14 +1,9 @@
 # IRBEM.jl
 
 [![DOI](https://zenodo.org/badge/978838161.svg)](https://doi.org/10.5281/zenodo.17577161)
-
-[![Build Status](https://github.com/JuliaSpacePhysics/IRBEM.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaSpacePhysics/IRBEM.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/JuliaSpacePhysics/IRBEM.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaSpacePhysics/IRBEM.jl)
-[![JET](https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a)](https://github.com/aviatesk/JET.jl)
 
 A Julia wrapper for the [IRBEM (International Radiation Belt Environment Modeling) Fortran library](https://prbem.github.io/IRBEM/).
-
-**Installation**: at the Julia REPL, run `using Pkg; Pkg.add("IRBEM")`
 
 **Documentation**: [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaSpacePhysics.github.io/IRBEM.jl/dev/)
 
@@ -28,6 +23,7 @@ The IRBEM library is a set of source codes dedicated to radiation belt modeling.
 ## Usage
 
 ```julia
+using Pkg; Pkg.add("IRBEM")
 using IRBEM
 using Dates
 
@@ -45,8 +41,7 @@ make_lstar(t, 𝐫, maginput; kext)
 # Trace a field line
 trace_field_line(t, 𝐫, maginput; kext)
 
-# Find the magnetic equator
-find_magequator(t, 𝐫, maginput; kext)
+find_magequator(t, 𝐫, maginput; kext) # -> a namedtuple with fields Bmin and XGEO
 
 # Calculate MLT
 get_mlt(t, 𝐫)
