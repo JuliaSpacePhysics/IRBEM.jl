@@ -1,14 +1,19 @@
 # Reference: https://github.com/PRBEM/IRBEM/blob/main/python/IRBEM/test_IRBEM.py
 
+using Pkg
+# prereleases often have no installable JET.
+const RUN_JET_TESTS = isempty(VERSION.prerelease)
+RUN_JET_TESTS && Pkg.add("JET")
+
 using TestItems, TestItemRunner
-@run_package_tests
+@run_package_tests filter = ti -> RUN_JET_TESTS || !(:jet in ti.tags)
 
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(IRBEM)
 end
 
-@testitem "JET" begin
+@testitem "JET" tags = [:jet] begin
     using JET
     IRBEM.workload()
     @test_call IRBEM.workload()
