@@ -78,6 +78,7 @@ function prepare_time(dt::AbstractVector)
 end
 
 prepare_time(dt::DateTime) = prepare_time([dt])
+prepare_time(dt) = prepare_time(DateTime(dt))
 
 ntime(time) = Int32(1)
 ntime(time::AbstractVector) = Int32(length(time))
