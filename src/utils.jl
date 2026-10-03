@@ -1,58 +1,90 @@
-const SF64 = Scalar{Float64}
-const RF64 = Ref{Float64}
+const BADDATA = -1.0e31 # IRBEM's output fill value
+const MAGINPUT_MISSING = -9999.0
+const MAGINPUT_FIELDS = fieldnames(MagInput) # rows 1-17 of IRBEM's maginput(25, ntime); rows 18-25 are reserved
 
-# https://docs.julialang.org/en/v1/base/c/#Base.unsafe_convert
-# https://docs.julialang.org/en/v1/manual/conversion-and-promotion/
-# We should make sure the input is a c-contiguous array
-@inline veci(x) = convert(Vector{Int32}, x)
-@inline vecf(x) = convert(Vector{Float64}, x)
-@inline vecf(x::StaticVector{S, T}) where {S, T} = T == Float64 ? x : Float64.(x)
-vecf(x::Number) = SF64(x)
-@inline arrf(x) = convert(Array{Float64}, x)
-@inline arrf(x::StaticArray{S}) where {S} = convert(StaticArray{S, Float64}, x)
-_first(x::AbstractVector) = x[1]
-_first(A) = selectdim(A, ndims(A), 1)
+_nan(x::Float64) = x == BADDATA ? NaN : x
+_nan(x::Array{Float64}) = map!(_nan, x, x)
+_nan(x::Ref) = _nan(x[])
+_nan(x) = x
 
-_deref(x::Ref) = x[]
-_deref(x) = x
+_squeeze(x::AbstractVector) = only(x)
+_squeeze(x::AbstractArray) = dropdims(x; dims = ndims(x))
+
+# A scalar time gives single-point outputs, whatever the number of points
+_output(nt, single) = single ? map(_squeeze ∘ _nan, nt) : map(_nan, nt)
+
+_out(p, dims...) = Array{Float64}(undef, dims..., p.ntime)
 
 """
-    get_datetime(X::Dict)
+    get_datetime(X::AbstractDict)
 
 Extract datetime from input dictionary X.
 Supports 'dateTime' or 'Time' keys with DateTime or String values.
 """
-function get_datetime(X::Dict)
+function get_datetime(X::AbstractDict)
     dt_val = get(X, "dateTime", get(X, "Time", nothing))
     return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
 end
 
-prepare_irbem(time, x, coord = "GDZ", maginput = Dict{Symbol, Float64}(); kext = KEXT[], options = OPTIONS[]) = (
-    ntime(time), parse_kext(kext), options, coord_sys(coord),
-    decompose_time(time)..., prepare_loc(x)...,
-    prepare_maginput(maginput),
-)
+const CoordVectors = Union{CoordinateVector, AbstractVector{<:CoordinateVector}}
+const CoordName = Union{AbstractString, Symbol, Integer, Type{<:AbstractCoordinateSystem}}
 
-prepare_irbem(time, x::CoordinateVector, maginput = (;); kext = KEXT[], options = OPTIONS[]) = (
-    ntime(time), parse_kext(kext), options, coord_sys(x),
-    decompose_time(time)..., prepare_loc(x)...,
-    prepare_maginput(maginput),
-)
+"""
+    prepare_irbem(args...; kw...) -> (p, single)
 
-function prepare_irbem(model::MagneticField, X::AbstractDict, maginput = Dict{Symbol, Float64}())
-    time = get_datetime(X)
+Convert user inputs into the `(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput)`
+arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
+`single` is `true` when `time` is a scalar.
+"""
+prepare_irbem(time, x, coord = "GDZ", maginput = (;); kext = KEXT[], options = OPTIONS[]) =
+    _prepare(time, prepare_loc(x), coord_sys(coord), maginput, kext, options)
+
+prepare_irbem(time, x::CoordVectors, maginput = (;); kext = KEXT[], options = OPTIONS[]) =
+    _prepare(time, prepare_loc(x), coord_sys(x), maginput, kext, options)
+
+function prepare_irbem(time, x::CoordVectors, coord::CoordName, maginput = (;); kw...)
+    coord_sys(coord) == coord_sys(x) || throw(ArgumentError("coord = $coord contradicts the coordinate system of the input positions"))
+    return prepare_irbem(time, x, maginput; kw...)
+end
+
+prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
+    _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), model.sysaxes, maginput, model.kext, model.options)
+
+function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
+    iyear, idoy, ut = decompose_time(time)
+    n = length(ut)
+    length(x1) == n || throw(DimensionMismatch("got $n time(s) but $(length(x1)) position(s)"))
+    p = (;
+        ntime = Int32(n), kext = parse_kext(kext), options = prepare_options(options), sysaxes = Int32(sysaxes),
+        iyear, idoy, ut, x1, x2, x3, maginput = prepare_maginput(maginput, n),
+    )
+    return p, !(time isa AbstractVector)
+end
+
+# Inputs at point `i`, for IRBEM's single-point routines
+function _point(p, i)
     return (
-        ntime(time), model.kext, model.options, model.sysaxes,
-        decompose_time(time)..., prepare_loc(X)...,
-        prepare_maginput(maginput),
+        p.kext, p.options, p.sysaxes, Ref(p.iyear, i), Ref(p.idoy, i), Ref(p.ut, i),
+        Ref(p.x1, i), Ref(p.x2, i), Ref(p.x3, i), Ref(p.maginput, 25 * (i - 1) + 1),
     )
 end
 
-"""
-    decompose_time_s(dt::DateTime)
+# Point `i` of an output whose last dimension indexes points
+_at(x::Array, i) = Ref(x, stride(x, ndims(x)) * (i - 1) + 1)
 
-Decompose a single DateTime into year, day of year, and UT.
-"""
+# Call IRBEM's single-point routine `f!` at each point
+function _each_point!(f!, p, extra, nt)
+    for i in 1:p.ntime
+        f!(_point(p, i)..., extra..., map(x -> _at(x, i), nt)...)
+    end
+    return nt
+end
+
+function _single((p, _))
+    p.ntime == 1 || throw(ArgumentError("expected a single time and position, got $(p.ntime); broadcast over points instead"))
+    return _point(p, 1)
+end
+
 function decompose_time_s(dt::DateTime)
     iyear = Int32(year(dt))
     idoy = Int32(dayofyear(dt))
@@ -62,205 +94,98 @@ end
 
 decompose_time_s(dt) = decompose_time_s(DateTime(dt))
 
-function decompose_time(x::AbstractVector)
-    dt = eltype(x) <: DateTime ? x : DateTime.(x)
-    iyear = @. Int32(year(dt))
-    idoy = @. Int32(dayofyear(dt))
-    ut = @. Float64(hour(dt) * 3600 + minute(dt) * 60 + second(dt) + millisecond(dt) / 1000)
-    return veci(iyear), veci(idoy), vecf(ut)
-end
-
-decompose_time(dt) = decompose_time(MVector(dt))
-
-function prepare_time(dt::AbstractVector)
-    ntime = Int32(length(dt))
-    return ntime, decompose_time(dt)...
-end
-
-prepare_time(dt::DateTime) = prepare_time([dt])
-prepare_time(dt) = prepare_time(DateTime(dt))
-
-ntime(time) = Int32(1)
-ntime(time::AbstractVector) = Int32(length(time))
-
-prepare_loc(x1, x2, x3) = vecf(x1), vecf(x2), vecf(x3)
-prepare_loc(x::AbstractVector) = SF64(x[1]), SF64(x[2]), SF64(x[3])
-prepare_loc(x::AbstractArray) = vecf(x[1, :]), vecf(x[2, :]), vecf(x[3, :])
-prepare_loc(x::AbstractVector{<:AbstractVector}) = prepare_loc((getindex.(x, i) for i in 1:3)...)
-prepare_loc(X::Dict) = prepare_loc(X["x1"], X["x2"], X["x3"])
-
-
-"""
-    process_coords_time(X::Dict)
-
-Process coordinates and time from input dictionary X.
-Returns ntime, iyear, idoy, ut, x1, x2, x3 arrays for IRBEM functions.
-"""
-function process_coords_time(X::Dict)
-    ntime, iyear, idoy, ut = prepare_time(get_datetime(X))
-    x1, x2, x3 = prepare_loc(X)
-    return ntime, iyear, idoy, ut, x1, x2, x3
-end
-
-"""
-    with_case_variants(dict::Dict{S, V}) where {S <: AbstractString, V}
-
-Creates a new dictionary with both uppercase and lowercase variants of each key.
-The original keys and values are preserved, and lowercase/uppercase variants are added.
-
-Example:
-```julia
-original = Dict("ABC" => 1, "DEF" => 2)
-result = with_case_variants(original)
-# result has keys: "ABC", "abc", "DEF", "def"
-```
-"""
-function with_case_variants(dict)
-    result = copy(dict)
-    for (key, value) in dict
-        result[lowercase(key)] = value
-        result[uppercase(key)] = value
+function decompose_time(ts::Union{AbstractVector, Tuple})
+    n = length(ts)
+    iyear = Vector{Int32}(undef, n)
+    idoy = Vector{Int32}(undef, n)
+    ut = Vector{Float64}(undef, n)
+    for (i, t) in enumerate(ts)
+        iyear[i], idoy[i], ut[i] = decompose_time_s(t)
     end
-    return result
+    return iyear, idoy, ut
 end
 
-_get_param(maginput::Dict{K, V}, param, default = nothing) where {K, V} = get(maginput, K(param), default)
-_get_param(maginput, param, default = nothing) = get(maginput, param, default)
+decompose_time(t) = decompose_time((t,))
+
+_vecf(x::Number) = [Float64(x)]
+_vecf(x) = convert(Vector{Float64}, x)
+
+prepare_loc(x1, x2, x3) = (_vecf(x1), _vecf(x2), _vecf(x3))
+function prepare_loc(x)
+    length(x) == 3 || throw(DimensionMismatch("a position must have 3 components, got $(length(x))"))
+    return prepare_loc(x[1], x[2], x[3])
+end
+function prepare_loc(x::AbstractMatrix)
+    size(x, 1) == 3 || throw(DimensionMismatch("positions must be a 3×n matrix, got size $(size(x))"))
+    return prepare_loc(view(x, 1, :), view(x, 2, :), view(x, 3, :))
+end
+prepare_loc(x::AbstractVector{<:AbstractVector}) = prepare_loc(getindex.(x, 1), getindex.(x, 2), getindex.(x, 3))
+
+function prepare_options(options)
+    length(options) == 5 || throw(ArgumentError("options must have 5 elements, got $(length(options))"))
+    # A fresh copy: some routines (e.g. landi2lstar) overwrite `options`
+    return MVector{5, Int32}(options)
+end
 
 """
-    prepare_maginput(maginput)
+    prepare_maginput(maginput, n)
 
-Process magnetic field model inputs from input dictionary.
-Returns a properly formatted array for IRBEM functions.
+Build IRBEM's 25×n `maginput` array from a `MagInput`, `NamedTuple` or `AbstractDict`.
+Each value is a scalar (repeated for every point) or a vector of length `n`.
 """
-function prepare_maginput(maginput)
-    return if isempty(maginput)
-        out = MVector{25, Float64}(undef)
-        fill!(out, -9999.0)
-    else
-        first_val = first(values(maginput))
-        if first_val isa AbstractArray
-            nTime = length(first_val)
-            out = Matrix{Float64}(undef, 25, nTime)
-            for (idx, param) in enumerate(param_indices)
-                val = _get_param(maginput, param, 0)
-                out[idx, :] .= Float64.(val)
-            end
-        else
-            out = MagInput(maginput)
-        end
-        out
+function prepare_maginput(maginput, n)
+    out = fill(MAGINPUT_MISSING, 25, n)
+    for (k, v) in _pairs(maginput)
+        i = findfirst(==(Symbol(k)), MAGINPUT_FIELDS)
+        isnothing(i) && throw(ArgumentError("Unknown magnetic field input $k. Valid inputs are $(join(MAGINPUT_FIELDS, ", "))"))
+        out[i, :] .= v
     end
+    return out
 end
 
+_pairs(m::MagInput) = (f => getfield(m, f) for f in MAGINPUT_FIELDS)
+_pairs(m) = pairs(m)
 
-parse_kext(kext::Integer) = kext
+parse_kext(kext::Integer) = Int32(kext)
 parse_kext(kext::ExternalFieldModel) = Int32(kext)
-const _EXT_MODELS = string.(instances(ExternalFieldModel))
+const _EXT_MODELS = uppercase.(string.(instances(ExternalFieldModel)))
 function parse_kext(kext)
-    idx = findfirst(isequal(kext), _EXT_MODELS)
-    return !isnothing(idx) ? idx - 1 : throw(ArgumentError("Unknown external field model: $kext. Valid models are $_EXT_MODELS"))
+    idx = findfirst(==(uppercase(string(kext))), _EXT_MODELS)
+    isnothing(idx) && throw(ArgumentError("Unknown external field model: $kext. Valid models are $(join(instances(ExternalFieldModel), ", "))"))
+    return Int32(idx - 1)
 end
 
-"""
-    coord_sys(axes)
-
-Look up the IRBEM coordinate system integer given a string representation.
-
-Coordinate systems:
-- 0: GDZ: (altitude, latitude, east longitude - km, deg, deg)
-- 1: GEO: Cartesian GEO - Re
-- 2: GSM: Cartesian GSM - Re
-- 3: GSE: Cartesian GSE - Re
-- 4: SM: Cartesian SM - Re
-- 5: GEI: Cartesian GEI - Re
-- 6: MAG: Cartesian MAG - Re
-- 7: SPH: Spherical GEO - (radial distance, latitude, east longitude - Re, deg, deg)
-- 8: RLL: Spherical GEO - (radial distance, latitude, east longitude - Re, deg, deg)
-
-Returns the corresponding integer code.
-"""
-function coord_sys(axes)
-    return get(coord_sys_lookup, axes) do
-        error("Unknown coordinate system: $axes. Choose from GDZ, GEO, GSM, GSE, SM, GEI, MAG, SPH, RLL.")
-    end
+"IRBEM `sysaxes` code of coordinate system `x` (name, `Symbol`, type, instance or `CoordinateVector`)."
+function coord_sys(x::Union{Symbol, AbstractString})
+    idx = findfirst(==(Symbol(x)), COORD_SYSTEMS)
+    isnothing(idx) && (idx = findfirst(==(Symbol(uppercase(String(x)))), COORD_SYSTEMS))
+    isnothing(idx) && throw(ArgumentError("Unknown coordinate system: $x. Choose from $(join(COORD_SYSTEMS, ", "))."))
+    return Int32(idx - 1)
 end
-
-function coord_sys(x::Symbol)
-    return get(coord_sys_lookup_sym, x) do
-        error("Unknown coordinate system: $x. Choose from GDZ, GEO, GSM, GSE, SM, GEI, MAG, SPH, RLL.")
-    end
-end
-
 coord_sys(x::Integer) = Int32(x)
 coord_sys(::Type{S}) where {S <: AbstractCoordinateSystem} = coord_sys(nameof(S))
 coord_sys(x::AbstractCoordinateSystem) = coord_sys(typeof(x))
-coord_sys(::Type{GDZ}) = 0
+coord_sys(v::CoordinateVector) = coord_sys(v.sym)
+coord_sys(::AbstractVector{<:CoordinateVector{<:Any, C}}) where {C} = coord_sys(C)
 
-parse_coord_transform(pair) = pair[1], pair[2]
-function parse_coord_transform(s::String)
-    # Accept formats like "geo2gsm", "GEO2GSM", "geo_to_gsm", etc.
-    s_clean = replace(s, "_to_" => "2")
-    if occursin("2", s_clean)
-        parts = split(s_clean, "2")
-        if length(parts) == 2
-            return parts[1], parts[2]
-        end
+parse_coord_transform(pair::Pair) = pair.first, pair.second
+parse_coord_transform(s::Symbol) = parse_coord_transform(String(s))
+# "geo2gsm", "GEO_to_GSM", "geo2j2000", ...; names may contain '2', so match known names
+function parse_coord_transform(s::AbstractString)
+    u = uppercase(replace(s, r"_to_"i => "2"))
+    for c in COORD_SYSTEMS
+        prefix = string(c, "2")
+        startswith(u, prefix) || continue
+        out = Symbol(chopprefix(u, prefix))
+        out in COORD_SYSTEMS && return c, out
     end
-    error("Could not parse coordinate system conversion string: '$s'. Expected format like 'geo2gsm'.")
+    throw(ArgumentError("Could not parse coordinate system conversion string: '$s'. Expected format like 'geo2gsm'."))
 end
 
-# Helper functions for relativistic calculations
-"""
-    beta(Ek, Erest=511.0)
-
-Calculate relativistic beta (v/c) for a particle with kinetic energy Ek.
-Ek and Erest must be in the same units (default is keV).
-"""
-beta(Ek, Erest = 511.0) = sqrt(1 - ((Ek / Erest) + 1)^(-2))
-
-"""
-    gamma(Ek, Erest=511.0)
-
-Calculate relativistic gamma factor for a particle with kinetic energy Ek.
-Ek and Erest must be in the same units (default is keV).
-"""
-gamma(Ek, Erest = 511.0) = 1 / sqrt(1 - beta(Ek, Erest)^2)
-
-"""
-    vparallel(Ek, Bm, B, Erest=511.0)
-
-Calculate parallel velocity for a particle with kinetic energy Ek,
-at a location with magnetic field B, with mirror point field Bm.
-Ek and Erest must be in the same units (default is keV).
-Returns velocity in m/s.
-"""
-vparallel(Ek, Bm, B, Erest = 511.0) = 3.0e8 * beta(Ek, Erest) * sqrt(1 - abs(B / Bm))
-
-"""
-    clean_posit!(posit, Nposit)
-
-Remove trailing NaN values from the posit array.
-"""
-function clean_posit!(posit::Array{T, 3}, Nposit::Vector{Int32}) where {T}
+function clean_posit!(posit::Array{T, 3}, Blocal::Matrix{T}, Nposit) where {T}
     for (i, n) in enumerate(Nposit)
         posit[:, (n + 1):end, i] .= T(NaN)
+        Blocal[(n + 1):end, i] .= T(NaN)
     end
     return
-end
-
-"""
-    @init_refs(Type, var1, var2, ...)
-
-Creates variables var1, var2, ... each initialized as `Ref{Type}()`.
-Example:
-    @init_refs(Float64, 0.0, Lm, Lstar)
-expands to:
-    Lm = Ref{Float64}(0.0)
-    Lstar = Ref{Float64}(0.0)
-"""
-macro init_refs(T, vars...)
-    return quote
-        $(Expr(:block, [:($(esc(v)) = Ref{$T}()) for v in vars]...))
-    end
 end

@@ -5,20 +5,18 @@
 
     alpha = 90.0  # Local pitch angle in degrees
     result = find_mirror_point(model, X, alpha, maginput)
-
-    @test result[1] == true_Blocal
-    @test result[2] == true_Bmin
-    @test result[3] == true_POSIT
-    @test result == find_mirror_point(t, x, alpha, "GDZ", maginput; kext = "T89")
+    @test approx(result, (true_Blocal, true_Bmin, true_POSIT))
+    @test approx(result, find_mirror_point(t, x, alpha, "GDZ", maginput; kext = "T89"))
+    multi = find_mirror_point([t, t], [x, x], alpha, "GDZ", maginput; kext = "T89")
+    @test multi.posit ≈ [true_POSIT true_POSIT]
 end
 
 @testitem "find_magequator" setup = [Share] begin
     true_Bmin = 626.2258295723121
     true_XGEO = [2.1962220856733894, 2.8360222891612192, 0.3472455620354017]
-    result = find_magequator(model, X, maginput)
-
-    @test result[1] == true_Bmin
-    @test result[2] == true_XGEO
+    @test approx(find_magequator(model, X, maginput), (true_Bmin, true_XGEO))
+    multi = find_magequator(model, X_array, maginput_array)
+    @test approx(multi, (fill(true_Bmin, n), repeat(true_XGEO, 1, n)))
 end
 
 @testitem "find_foot_point" setup = [Share] begin
@@ -29,6 +27,6 @@ end
     )
     stopAlt = 100
     hemiFlag = 0
-    @test find_foot_point(model, X, stopAlt, hemiFlag, maginput) == _foot_point_true
-    @test find_foot_point(t, x, stopAlt, hemiFlag, "GDZ", maginput; kext = "T89") == _foot_point_true
+    @test approx(find_foot_point(model, X, stopAlt, hemiFlag, maginput), _foot_point_true)
+    @test approx(find_foot_point(t, x, stopAlt, hemiFlag, "GDZ", maginput; kext = "T89"), _foot_point_true)
 end

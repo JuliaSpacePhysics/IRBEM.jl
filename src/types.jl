@@ -1,5 +1,3 @@
-import Base: String
-
 """
 External Magnetic Field Model
 
@@ -46,51 +44,37 @@ mutable struct MagneticField
     sysaxes::Int32
 end
 
+function MagneticField(; options = [0, 0, 0, 0, 0], kext = OPQ77, sysaxes = "GDZ")
+    return MagneticField(parse_kext(kext), options, coord_sys(sysaxes))
+end
+
 """
-Magnetic field inputs
+Magnetic field inputs. Unset fields are `-9999`, which IRBEM treats as missing.
 
 See [IRBEM Documentation](https://prbem.github.io/IRBEM/api/general_information.html#magnetic-field-inputs)
 """
 @kwdef mutable struct MagInput
-    Kp::Float64 = 0.0
-    Dst::Float64 = 0.0
-    Dsw::Float64 = 0.0 # solar wind density (cm-3)
-    Vsw::Float64 = 0.0 # solar wind velocity (km/s)
-    Pdyn::Float64 = 0.0 # solar wind dynamic pressure (nPa)
-    ByIMF::Float64 = 0.0 # GSM y component of interplanetary magnetic field (nT)
-    BzIMF::Float64 = 0.0 # GSM z component of interplanetary magnetic field (nT)
-    G1::Float64 = 0.0
-    G2::Float64 = 0.0
-    G3::Float64 = 0.0
-    W1::Float64 = 0.0
-    W2::Float64 = 0.0
-    W3::Float64 = 0.0
-    W4::Float64 = 0.0
-    W5::Float64 = 0.0
-    W6::Float64 = 0.0
-    AL::Float64 = 0.0 # auroral index
+    Kp::Float64 = -9999.0 # Kp × 10 (e.g. 40 for Kp = 4)
+    Dst::Float64 = -9999.0
+    Dsw::Float64 = -9999.0 # solar wind density (cm-3)
+    Vsw::Float64 = -9999.0 # solar wind velocity (km/s)
+    Pdyn::Float64 = -9999.0 # solar wind dynamic pressure (nPa)
+    ByIMF::Float64 = -9999.0 # GSM y component of interplanetary magnetic field (nT)
+    BzIMF::Float64 = -9999.0 # GSM z component of interplanetary magnetic field (nT)
+    G1::Float64 = -9999.0
+    G2::Float64 = -9999.0
+    G3::Float64 = -9999.0
+    W1::Float64 = -9999.0
+    W2::Float64 = -9999.0
+    W3::Float64 = -9999.0
+    W4::Float64 = -9999.0
+    W5::Float64 = -9999.0
+    W6::Float64 = -9999.0
+    AL::Float64 = -9999.0 # auroral index
 end
 
 MagInput(nt) = MagInput(; nt...)
-function MagInput(d::AbstractDict)
-    out = MagInput()
-    for (key, param) in d
-        sym = Symbol(key)
-        setfield!(out, sym, convert(Float64, param))
-    end
-    return out
-end
-
-Base.unsafe_convert(::Type{Ptr{Float64}}, a::MagInput) =
-    Base.unsafe_convert(Ptr{Float64}, pointer_from_objref(a))
-
-const param_indices = fieldnames(MagInput)
-
-function MagneticField(; options = [0, 0, 0, 0, 0], kext = OPQ77, sysaxes = "GDZ")
-    kext_val = parse_kext(kext)
-    sysaxes_val = coord_sys(sysaxes)
-    return MagneticField(kext_val, options, sysaxes_val)
-end
+MagInput(d::AbstractDict) = MagInput(; (Symbol(k) => v for (k, v) in d)...)
 
 abstract type AbstractCoordinateSystem end
 
@@ -101,12 +85,17 @@ struct CoordinateVector{T, C} <: FieldVector{3, T}
     sym::C
 end
 
-for sys in (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :J2000)
+# Arithmetic results (e.g. `a - b`) are not positions in a coordinate system
+StaticArrays.similar_type(::Type{<:CoordinateVector{T}}, ::Type{T}, s::Size) where {T} = similar_type(SVector{3, T}, T, s)
+
+# Order gives IRBEM's `sysaxes` code (0-based)
+const COORD_SYSTEMS = (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :TOD, :J2000, :TEME)
+
+for sys in COORD_SYSTEMS
     @eval struct $sys <: AbstractCoordinateSystem end
     @eval $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
-    @eval $sys(x) = (@assert length(x) == 3; CoordinateVector(x[1], x[2], x[3], $sys()))
+    @eval $sys(x) = (length(x) == 3 || throw(DimensionMismatch("expected 3 components, got $(length(x))")); $sys(x[1], x[2], x[3]))
     @eval export $sys
-    @eval Base.String(::Type{$sys}) = $(String(sys))
 end
 
 @doc "Geodetic (altitude, latitude, east longitude - km, deg, deg)" GDZ
@@ -114,10 +103,13 @@ end
 @doc "Geocentric Solar Magnetospheric (GSM)\n\nX points sunward from Earth's center. The X-Z plane is defined to contain Earth's dipole axis (positive North)." GSM
 @doc "Geocentric Solar Ecliptic (GSE) (Earth radii)" GSE
 @doc "Solar Magnetic (SM)" SM
-@doc "Geocentric Equatorial Inertial (GEI)" GEI
+@doc "Geocentric Equatorial Inertial (GEI), true of date (Earth radii)" GEI
 @doc "Geomagnetic (MAG)" MAG
 @doc "Spherical GEO (SPH) (radial distance, latitude, east longitude - Earth radii, deg, deg)" SPH
 @doc "Geodetic (radial distance, latitude, East longitude - Earth radii, deg, deg)\n\nA re-expression of [`GDZ`](@ref) coordinates using radial distance instead of altitude above the reference ellipsoid." RLL
-
-coord(v::CoordinateVector) = v.sym
-coord_sys(v::CoordinateVector) = coord_sys(v.sym)
+@doc "Heliocentric Earth Ecliptic (HEE) (Earth radii)" HEE
+@doc "Heliocentric Aries Ecliptic (HAE) (Earth radii)" HAE
+@doc "Heliocentric Earth Equatorial (HEEQ) (Earth radii)" HEEQ
+@doc "True of Date (TOD), same as [`GEI`](@ref) (Earth radii)" TOD
+@doc "[`GEI`](@ref) at J2000: mean equator and mean equinox of J2000 (Earth radii)" J2000
+@doc "True Equator Mean Equinox (TEME), the inertial system of SGP4 (Earth radii)" TEME

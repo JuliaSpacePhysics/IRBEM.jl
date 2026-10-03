@@ -18,7 +18,8 @@ The IRBEM library is a set of source codes dedicated to radiation belt modeling.
 - Compute magnetic field, derivatives and gradients
 - Field tracing
 - Coordinates transformations
-- Flexible interface (Multiple dispatch with Fortran-style, Python-style, and Julia-style)
+- Flexible interface (Julia-style and Python-style `Dict` inputs, single points or arrays)
+- Thread-safe: concurrent calls are serialized around the (stateful) Fortran library
 
 ## Usage
 

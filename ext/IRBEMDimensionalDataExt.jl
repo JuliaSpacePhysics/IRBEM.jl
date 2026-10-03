@@ -3,7 +3,7 @@ module IRBEMDimensionalDataExt
 using DimensionalData: dimnum, dims, rebuild, layers
 using DimensionalData: AbstractDimArray, AbstractDimStack, TimeDim
 import IRBEM
-import IRBEM: get_mlt, vecf
+using IRBEM: get_mlt
 
 function IRBEM.get_mlt(A::AbstractDimArray)
     dim = dimnum(A, TimeDim)

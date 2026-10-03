@@ -1,9 +1,11 @@
 """
     transform(time, pos, in, out)
+    transform(time, pos, in => out)
+    transform(time, pos, "in2out")
 
 Transform coordinates from `in` coordinate system to `out` coordinate system.
 
-Note: `pos` must be of shape (3,) for single point or (3, n) for multiple points
+`pos` is of shape (3,) for a single point or (3, n) for `n` points, with one time per point.
 
 # Example
 ```julia
@@ -20,30 +22,21 @@ transform(time, pos, "geo2gsm")
 ```
 """
 function transform(time, pos, in, out)
-    size(pos, 1) != 3 && error("Position array must of shape (3, n), got size ", size(pos))
-
-    # Validate time dimension matches position dimension
+    size(pos, 1) == 3 || throw(DimensionMismatch("positions must be of shape (3,) or (3, n), got size $(size(pos))"))
+    iyear, idoy, ut = decompose_time(time)
+    n = length(ut)
     npos = ndims(pos) == 1 ? 1 : size(pos, 2)
-    ntime_input = time isa AbstractVector ? length(time) : 1
-    @assert ntime_input == npos "Time dimension ($ntime_input) must match position dimension ($npos)"
-
-    # Prepare call arguments - ensure contiguous arrays for Fortran
-    pos_in = arrf(pos)
+    n == npos || throw(DimensionMismatch("got $n time(s) but $npos position(s)"))
+    pos_in = _arrf(pos)
     pos_out = similar(pos_in)
-    ntime, iyear, idoy, ut = prepare_time(time)
-    sys_in = coord_sys(in)
-    sys_out = coord_sys(out)
-    coord_trans_vec1!(ntime, sys_in, sys_out, iyear, idoy, ut, pos_in, pos_out)
-
-    return isa(time, AbstractVector) ? pos_out : vec(pos_out)
+    coord_trans_vec1!(Int32(n), coord_sys(in), coord_sys(out), iyear, idoy, ut, pos_in, pos_out)
+    return time isa AbstractVector ? pos_out : vec(pos_out)
 end
 
 transform(time, pos, inout) = transform(time, pos, parse_coord_transform(inout)...)
 
+_arrf(x) = convert(Array{Float64}, x)
+_arrf(x::StaticArray) = Float64.(SArray(x))
+
 (::Type{S})(time, pos::CoordinateVector) where {S <: AbstractCoordinateSystem} =
     S(transform(time, pos, pos.sym, S))
-
-
-# transform(time, pos::CoordinateVector, out) = transform(time, pos, pos.sym, out)
-# transform(time, pos::CoordinateVector, ::Type{S}) where {S<:AbstractCoordinateSystem} =
-#     S(transform(time, pos, pos.sym, S))
