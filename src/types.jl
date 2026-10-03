@@ -85,8 +85,8 @@ struct CoordinateVector{T, C} <: FieldVector{3, T}
     sym::C
 end
 
-# Lets StaticArrays build results (e.g. `a - b`) in the same coordinate system
-CoordinateVector{T, C}(x, y, z) where {T, C} = CoordinateVector{T, C}(x, y, z, C())
+# Arithmetic results (e.g. `a - b`) are not positions in a coordinate system
+StaticArrays.similar_type(::Type{<:CoordinateVector{T}}, ::Type{T}, s::Size) where {T} = similar_type(SVector{3, T}, T, s)
 
 # Order gives IRBEM's `sysaxes` code (0-based)
 const COORD_SYSTEMS = (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :TOD, :J2000, :TEME)

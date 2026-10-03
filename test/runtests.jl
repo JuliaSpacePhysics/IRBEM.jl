@@ -70,6 +70,11 @@ end
     xgeo = GEO(transform(t, x, "GDZ", "GEO"))
     @test make_lstar([t, t], [xgeo, xgeo], maginput_nt; kext).Lm ≈ fill(l_star_true.Lm, 2) rtol = 1.0e-6
     @test_throws DimensionMismatch make_lstar([t, t], x, "GDZ", maginput_nt; kext)
+    # Output shape follows the time input, not the number of points
+    @test make_lstar([t], [x], "GDZ", maginput_nt; kext).Lm isa Vector
+    @inferred make_lstar(t, GDZ(x), maginput_nt; kext)
+    @test make_lstar(t, GDZ(x), "GDZ", maginput_nt; kext).Lm ≈ l_star_true.Lm
+    @test_throws ArgumentError make_lstar(t, GDZ(x), "GEO", maginput_nt; kext)
     # Unset model inputs are missing for IRBEM, not zero
     @test isnan(make_lstar(t, GDZ(x); kext).Lm)
 end

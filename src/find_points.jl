@@ -19,13 +19,9 @@ $SIG_DOC
 References: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-FIND_MIRROR_POINT)
 """
 function find_mirror_point(arg1, arg2, alpha, args...; kw...)
-    p = prepare_irbem(arg1, arg2, args...; kw...)
-    n = p.ntime
-    nt = (; Blocal = Vector{Float64}(undef, n), Bmirr = Vector{Float64}(undef, n), posit = Matrix{Float64}(undef, 3, n))
-    for i in 1:n
-        find_mirror_point1!(_point(p, i)..., Float64(alpha), Ref(nt.Blocal, i), Ref(nt.Bmirr, i), Ref(nt.posit, 3i - 2))
-    end
-    return _output(nt, n)
+    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+    nt = (; Blocal = _out(p), Bmirr = _out(p), posit = _out(p, 3))
+    return _output(_each_point!(find_mirror_point1!, p, (Float64(alpha),), nt), single)
 end
 
 """
@@ -47,16 +43,9 @@ $SIG_DOC
 References: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-FIND_FOOT_POINT)
 """
 function find_foot_point(arg1, arg2, stop_alt, hemi_flag, args...; kw...)
-    p = prepare_irbem(arg1, arg2, args...; kw...)
-    n = p.ntime
-    nt = (; XFOOT = Matrix{Float64}(undef, 3, n), BFOOT = Matrix{Float64}(undef, 3, n), BFOOTMAG = Vector{Float64}(undef, n))
-    for i in 1:n
-        find_foot_point1!(
-            _point(p, i)..., Float64(stop_alt), Int32(hemi_flag),
-            Ref(nt.XFOOT, 3i - 2), Ref(nt.BFOOT, 3i - 2), Ref(nt.BFOOTMAG, i)
-        )
-    end
-    return _output(nt, n)
+    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+    nt = (; XFOOT = _out(p, 3), BFOOT = _out(p, 3), BFOOTMAG = _out(p))
+    return _output(_each_point!(find_foot_point1!, p, (Float64(stop_alt), Int32(hemi_flag)), nt), single)
 end
 
 """
@@ -70,11 +59,7 @@ Returns a named tuple with fields Bmin and XGEO (location of magnetic equator).
 $SIG_DOC
 """
 function find_magequator(args...; kw...)
-    p = prepare_irbem(args...; kw...)
-    n = p.ntime
-    nt = (; Bmin = Vector{Float64}(undef, n), XGEO = Matrix{Float64}(undef, 3, n))
-    for i in 1:n
-        find_magequator1!(_point(p, i)..., Ref(nt.Bmin, i), Ref(nt.XGEO, 3i - 2))
-    end
-    return _output(nt, n)
+    p, single = prepare_irbem(args...; kw...)
+    nt = (; Bmin = _out(p), XGEO = _out(p, 3))
+    return _output(_each_point!(find_magequator1!, p, (), nt), single)
 end

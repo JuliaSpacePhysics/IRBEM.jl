@@ -34,10 +34,10 @@ Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.ht
 """
 landi2lstar(args...; kw...) = _lstar(landi2lstar1_!, prepare_irbem(args...; kw...))
 
-function _lstar(f!, p)
-    nt = NamedTuple{(:Lm, :Lstar, :Blocal, :Bmin, :XJ, :MLT)}(ntuple(_ -> Vector{Float64}(undef, p.ntime), 6))
+function _lstar(f!, (p, single))
+    nt = NamedTuple{(:Lm, :Lstar, :Blocal, :Bmin, :XJ, :MLT)}(ntuple(_ -> _out(p), 6))
     f!(p..., nt...)
-    return _output(nt, p.ntime)
+    return _output(nt, single)
 end
 
 """
@@ -53,10 +53,10 @@ $SIG_DOC
 - `NamedTuple`: Contains fields Bgeo (GEO components of B field) and Bmag (magnitude of B field)
 """
 function get_field_multi(args...; kw...)
-    p = prepare_irbem(args...; kw...)
-    nt = (; Bgeo = Matrix{Float64}(undef, 3, p.ntime), Bmag = Vector{Float64}(undef, p.ntime))
+    p, single = prepare_irbem(args...; kw...)
+    nt = (; Bgeo = _out(p, 3), Bmag = _out(p))
     get_field_multi!(p..., nt...)
-    return _output(nt, p.ntime)
+    return _output(nt, single)
 end
 
 """
@@ -83,14 +83,10 @@ julia> get_bderivs("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), 0.1, (; Kp = 4
 ```
 """
 function get_bderivs(arg1, arg2, dX, args...; kw...)
-    p = prepare_irbem(arg1, arg2, args...; kw...)
-    n = p.ntime
-    nt = (;
-        Bgeo = Matrix{Float64}(undef, 3, n), Bmag = Vector{Float64}(undef, n),
-        gradBmag = Matrix{Float64}(undef, 3, n), diffB = Array{Float64}(undef, 3, 3, n),
-    )
+    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+    nt = (; Bgeo = _out(p, 3), Bmag = _out(p), gradBmag = _out(p, 3), diffB = _out(p, 3, 3))
     get_bderivs!(p..., Float64(dX), nt...)
-    return _output(nt, n)
+    return _output(nt, single)
 end
 
 """
@@ -105,10 +101,10 @@ $SIG_DOC
 Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-GET_HEMI_MULTI)
 """
 function get_hemi(args...; kw...)
-    p = prepare_irbem(args...; kw...)
+    p, single = prepare_irbem(args...; kw...)
     xhemi = Vector{Int32}(undef, p.ntime)
     get_hemi_multi!(p..., xhemi)
-    return p.ntime == 1 ? only(xhemi) : xhemi
+    return _output((; xhemi), single).xhemi
 end
 
 """
@@ -121,11 +117,9 @@ Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 `X` is a dictionary with keys `x1`, `x2`, `x3` (GEO position) and `dateTime` or `Time`.
 """
 function get_mlt(𝐫, time)
-    length(𝐫) == 3 || throw(DimensionMismatch("a position must have 3 components, got $(length(𝐫))"))
     iyear, idoy, ut = decompose_time_s(time)
-    xgeo = 𝐫 isa StaticVector ? SVector{3, Float64}(𝐫) : _vecf(𝐫)
     mlt = Ref{Float64}()
-    get_mlt1!(iyear, idoy, ut, xgeo, mlt)
+    get_mlt1!(iyear, idoy, ut, SVector{3, Float64}(𝐫), mlt)
     return mlt[]
 end
 

@@ -7,11 +7,13 @@ _nan(x::Array{Float64}) = map!(_nan, x, x)
 _nan(x::Ref) = _nan(x[])
 _nan(x) = x
 
-# Single-point inputs give single-point outputs
 _squeeze(x::AbstractVector) = only(x)
 _squeeze(x::AbstractArray) = dropdims(x; dims = ndims(x))
 
-_output(nt, n) = (map(_nan, nt); n == 1 ? map(_squeeze, nt) : nt)
+# A scalar time gives single-point outputs, whatever the number of points
+_output(nt, single) = single ? map(_squeeze ∘ _nan, nt) : map(_nan, nt)
+
+_out(p, dims...) = Array{Float64}(undef, dims..., p.ntime)
 
 """
     get_datetime(X::AbstractDict)
@@ -25,18 +27,25 @@ function get_datetime(X::AbstractDict)
 end
 
 const CoordVectors = Union{CoordinateVector, AbstractVector{<:CoordinateVector}}
+const CoordName = Union{AbstractString, Symbol, Integer, Type{<:AbstractCoordinateSystem}}
 
 """
-    prepare_irbem(args...; kw...)
+    prepare_irbem(args...; kw...) -> (p, single)
 
 Convert user inputs into the `(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput)`
-arguments shared by IRBEM routines, as a `NamedTuple` in that order.
+arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
+`single` is `true` when `time` is a scalar.
 """
 prepare_irbem(time, x, coord = "GDZ", maginput = (;); kext = KEXT[], options = OPTIONS[]) =
     _prepare(time, prepare_loc(x), coord_sys(coord), maginput, kext, options)
 
 prepare_irbem(time, x::CoordVectors, maginput = (;); kext = KEXT[], options = OPTIONS[]) =
     _prepare(time, prepare_loc(x), coord_sys(x), maginput, kext, options)
+
+function prepare_irbem(time, x::CoordVectors, coord::CoordName, maginput = (;); kw...)
+    coord_sys(coord) == coord_sys(x) || throw(ArgumentError("coord = $coord contradicts the coordinate system of the input positions"))
+    return prepare_irbem(time, x, maginput; kw...)
+end
 
 prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
     _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), model.sysaxes, maginput, model.kext, model.options)
@@ -45,10 +54,11 @@ function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
     iyear, idoy, ut = decompose_time(time)
     n = length(ut)
     length(x1) == n || throw(DimensionMismatch("got $n time(s) but $(length(x1)) position(s)"))
-    return (;
+    p = (;
         ntime = Int32(n), kext = parse_kext(kext), options = prepare_options(options), sysaxes = Int32(sysaxes),
         iyear, idoy, ut, x1, x2, x3, maginput = prepare_maginput(maginput, n),
     )
+    return p, !(time isa AbstractVector)
 end
 
 # Inputs at point `i`, for IRBEM's single-point routines
@@ -59,7 +69,18 @@ function _point(p, i)
     )
 end
 
-function _single(p)
+# Point `i` of an output whose last dimension indexes points
+_at(x::Array, i) = Ref(x, stride(x, ndims(x)) * (i - 1) + 1)
+
+# Call IRBEM's single-point routine `f!` at each point
+function _each_point!(f!, p, extra, nt)
+    for i in 1:p.ntime
+        f!(_point(p, i)..., extra..., map(x -> _at(x, i), nt)...)
+    end
+    return nt
+end
+
+function _single((p, _))
     p.ntime == 1 || throw(ArgumentError("expected a single time and position, got $(p.ntime); broadcast over points instead"))
     return _point(p, 1)
 end
