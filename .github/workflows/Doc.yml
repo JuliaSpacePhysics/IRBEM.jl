@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "src/**"
+      - "ext/**"
       - "docs/**"
       - "Project.toml"
       - "docs/Project.toml"
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - "ext/**"
       - "docs/**"
       - "Project.toml"
       - "docs/Project.toml"

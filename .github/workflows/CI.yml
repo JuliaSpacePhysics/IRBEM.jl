@@ -5,12 +5,14 @@ on:
       - main
     paths:
       - "src/**"
+      - "ext/**"
       - "test/**"
       - "Project.toml"
     tags: ["*"]
   pull_request:
     paths:
       - "src/**"
+      - "ext/**"
       - "test/**"
       - "Project.toml"
   workflow_dispatch:

@@ -7,7 +7,9 @@ See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for m
 
 ## Computing magnetic field coordinates
 - [`make_lstar`](@ref): Compute magnetic coordinates at a spacecraft position
+- [`landi2lstar`](@ref): Fast empirical L* for locally mirroring particles
 - [`get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
+- [`get_hemi`](@ref): Get magnetic hemisphere of input location
 
 ## Points of interest on the field line
 - [`find_mirror_point`](@ref): Find magnitude and location of mirror point along field line
@@ -31,6 +33,9 @@ See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for m
 - [`irbem_fortran_version`](@ref): Provides the repository version number of the fortran source code
 - [`irbem_fortran_release`](@ref): Provides the repository release tag of the fortran source code
 
+Outputs that IRBEM could not compute (its `-1e31` fill value) are `NaN`.
+Only one IRBEM routine runs at a time: calls from multiple threads are serialized.
+
 # References
 - [IRBEM Documentation](https://prbem.github.io/IRBEM/)
 - [IRBEM GitHub](https://github.com/PRBEM/IRBEM)
@@ -42,7 +47,7 @@ using IRBEM_jll
 using StaticArrays
 
 export MagInput, MagneticField
-export make_lstar, get_field_multi, get_mlt
+export make_lstar, landi2lstar, get_field_multi, get_mlt, get_hemi
 export get_bderivs
 export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
@@ -53,19 +58,18 @@ export MF75, TS87, TL87, T89, OPQ77, OPD88, T96, OM97, T01, T01S, T04, A00, T07,
 include("types.jl")
 include("lib.jl")
 include("utils.jl")
-include("const.jl")
 
 const KEXT = Ref{Int32}(OPQ77)
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
 const SIG1 = """time, x, [coord="GDZ",] maginput=(; ); kext=KEXT[], options=OPTIONS[]"""
-const SIG2 = """model::MagneticField, X, maginput=(; )"""
+const SIG2 = """model::MagneticField, X::AbstractDict, maginput=(; )"""
 const SIG_DOC = """
 ## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
-- `x`:  Position coordinates as a 3×n array or a tuple/vector of vectors.
-      If the element type of `x` is `CoordinateVector`, `coord` is not needed.
-- `coord` (optional): String specifying the coordinate system (default: "GDZ")
+- `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time).
+      If `x` is a `CoordinateVector` (e.g. `GDZ(...)`) or a vector of them, omit `coord`.
+- `coord` (optional): Coordinate system name, `Symbol` or type (default: "GDZ")
 - `kext` (optional): External field model selection (default: KEXT[])
 - `options` (optional): Model options (default: OPTIONS[])
 
@@ -76,7 +80,8 @@ const SIG_DOC = """
   - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
 
 ## Common arguments:
-- `maginput`: Named tuple or dictionary or `MagInput` with magnetic field model inputs (optional)
+- `maginput`: Named tuple, dictionary or `MagInput` with magnetic field model inputs (optional).
+  Values are scalars (shared by all times) or vectors (one per time); unset inputs are missing (`-9999`).
 """
 
 include("magnetic_field.jl")
@@ -84,7 +89,6 @@ include("find_points.jl")
 include("tracing.jl")
 include("coordinates.jl")
 include("info.jl")
-include("python.jl")
 include("workload.jl")
 
 end

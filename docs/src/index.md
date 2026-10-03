@@ -47,13 +47,21 @@ GEI
 MAG
 SPH
 RLL
+HEE
+HAE
+HEEQ
+TOD
+J2000
+TEME
 ```
 
 ## Computing magnetic field coordinates
 
 ```@docs
 make_lstar
+landi2lstar
 get_mlt
+get_hemi
 ```
 
 
@@ -87,12 +95,6 @@ drift_bounce_orbit
 
 ```@docs
 transform
-```
-
-## Python interface
-
-```@docs
-IRBEM.PythonAPI
 ```
 
 ## Library information

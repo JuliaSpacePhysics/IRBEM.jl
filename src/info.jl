@@ -5,9 +5,8 @@ get_igrf_version() = (v = Ref{Int32}(0); get_igrf_version!(v); v[])
 irbem_fortran_version() = (v = Ref{Int32}(0); irbem_fortran_version1!(v); v[])
 
 "Provides the repository release tag of the fortran source code."
-irbem_fortran_release() = (
-    v = Vector{UInt8}(undef, 80);
-    irbem_fortran_release1!(v);
-    strip(String(v))
-)
-
+function irbem_fortran_release()
+    v = zeros(UInt8, 80)
+    irbem_fortran_release1!(v)
+    return strip(String(v), [' ', '\0'])
+end

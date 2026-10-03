@@ -18,8 +18,7 @@ end
 ## Trace field line
 
 ```@example mag_model
-# Set up model and inputmake_lstar
-model = MagneticField()
+# Set up model inputs
 maginput = Dict("Kp" => 40.0)
 time = "2015-02-02T06:12:43"
 𝐫 = GDZ(651, 63, 15.9)
