@@ -12,7 +12,7 @@ end
     using JET
     IRBEM.workload()
     @test_call IRBEM.workload()
-    test_package(IRBEM)
+    test_package(IRBEM; target_modules = (IRBEM,))
 end
 
 @testsnippet Share begin
@@ -128,6 +128,14 @@ end
     true_MLT = 9.56999052595853
     @test get_mlt(input_dict) ≈ true_MLT
     @test get_mlt(r, t) == get_mlt(t, r) ≈ true_MLT
+
+    using DimensionalData, TimeseriesUtilities
+    t2 = [t, t + Hour(6)]
+    A = [r r]
+    mlt2 = get_mlt.(eachcol(A), t2)
+    @test get_mlt(Timed(A, t2; dim = 2)) == Timed(mlt2, t2)
+    pos = DimArray(permutedims(A), (Ti(t2), Y(1:3)))
+    @test get_mlt(pos) == mlt2
 end
 
 @testitem "trace_field_line" setup = [Share] begin

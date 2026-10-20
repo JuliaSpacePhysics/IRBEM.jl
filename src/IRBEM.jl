@@ -45,6 +45,7 @@ module IRBEM
 using Dates
 using IRBEM_jll
 using StaticArrays
+using TimeseriesUtilities: mapsamples, times
 
 export MagInput, MagneticField
 export make_lstar, landi2lstar, get_field_multi, get_mlt, get_hemi
