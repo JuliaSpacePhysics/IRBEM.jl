@@ -112,9 +112,12 @@ end
     get_mlt(time, 𝐫::AbstractVector)
     get_mlt(x, y, z, time)
     get_mlt(X::AbstractDict)
+    get_mlt(A; dim = nothing)
 
 Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
 `X` is a dictionary with keys `x1`, `x2`, `x3` (GEO position) and `dateTime` or `Time`.
+`A` is a time series of GEO positions (e.g. `DimArray`, `KeyedArray`, or `Timed(A, times; dim)`, see TimeseriesUtilities.jl);
+returns MLT per time in the same container.
 """
 function get_mlt(𝐫, time)
     iyear, idoy, ut = decompose_time_s(time)
@@ -126,3 +129,4 @@ end
 get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
 get_mlt(time, 𝐫::AbstractVector) = get_mlt(𝐫, time)
 get_mlt(X::AbstractDict) = get_mlt(X["x1"], X["x2"], X["x3"], get_datetime(X))
+get_mlt(A; dim = nothing) = mapsamples(get_mlt, A, times(A, dim); dim)
