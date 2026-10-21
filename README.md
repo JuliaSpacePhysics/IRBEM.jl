@@ -31,7 +31,7 @@ using Dates
 # Initialize the magnetic field model
 kext = T89
 t = DateTime("2015-02-02T06:12:43")
-𝐫 = GDZ(651, 63, 15.9)
+𝐫 = [651, 63, 15.9] # GDZ: alt [km], lat, lon [deg]
 
 # Define magnetic field model inputs
 maginput = (; Kp = 40.0)
@@ -46,9 +46,19 @@ find_magequator(t, 𝐫, maginput; kext) # -> a namedtuple with fields Bmin and 
 
 # Calculate MLT
 get_mlt(t, 𝐫)
+
+# Transform raw components between IRBEM coordinate systems, one time per point
+coord_trans("GDZ", "GSM", t, 𝐫)
 ```
+
+### Coordinates
+
+Positions are raw components (vector, 3×n matrix, vector of vectors) in the IRBEM coordinate system named by `coord`
+(`"GDZ"` default, `"GEO"`, `"GSM"`, `"GSE"`, `"SM"`, `"GEI"`, `"MAG"`, `"SPH"`, `"RLL"`, `"HEE"`, `"HAE"`, `"HEEQ"`, `"TOD"`, `"J2000"`, `"TEME"`),
+in [IRBEM's component order](https://prbem.github.io/IRBEM/api/general_information.html#coordinate-systems).
+
+[GeoCotrans.jl](https://github.com/JuliaSpacePhysics/GeoCotrans.jl) `CoordinateVector`s are also accepted; their type gives the system, so omit `coord`.
 
 ## Acknowledgments
 
-- The IRBEM library is developed and maintained by the IRBEM-LIB development team.
-- This Julia wrapper is inspired by the existing Python and MATLAB wrappers for IRBEM.
+The IRBEM library is developed and maintained by the IRBEM-LIB development team.

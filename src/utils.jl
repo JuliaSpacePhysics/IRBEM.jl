@@ -26,8 +26,6 @@ function get_datetime(X::AbstractDict)
     return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
 end
 
-const CoordVectors = Union{CoordinateVector, AbstractVector{<:CoordinateVector}}
-
 """
     prepare_irbem(args...; kw...) -> (p, single)
 
@@ -36,16 +34,13 @@ arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
 `single` is `true` when `time` is a scalar.
 """
 prepare_irbem(time, x, maginput = (;); coord = nothing, kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, prepare_loc(x), _sysaxes(x, coord), maginput, kext, options)
-
-_sysaxes(_, coord) = coord_sys(something(coord, "GDZ"))
-function _sysaxes(x::CoordVectors, coord)
-    isnothing(coord) || throw(ArgumentError("`coord` is given by the type of the positions"))
-    return coord_sys(x)
-end
+    _prepare(time, _loc(x, coord)..., maginput, kext, options)
 
 prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
     _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), model.sysaxes, maginput, model.kext, model.options)
+
+# `(components, sysaxes)` of raw positions in system `coord`; typed positions in IRBEMGeoCotransExt
+_loc(x, coord) = prepare_loc(x), coord_sys(something(coord, "GDZ"))
 
 function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
     iyear, idoy, ut = decompose_time(time)
@@ -152,31 +147,14 @@ function parse_kext(kext)
     return Int32(idx - 1)
 end
 
-"IRBEM `sysaxes` code of coordinate system `x` (name, `Symbol`, type, instance or `CoordinateVector`)."
-function coord_sys(x::Union{Symbol, AbstractString})
-    idx = findfirst(==(Symbol(x)), COORD_SYSTEMS)
-    isnothing(idx) && (idx = findfirst(==(Symbol(uppercase(String(x)))), COORD_SYSTEMS))
-    isnothing(idx) && throw(ArgumentError("Unknown coordinate system: $x. Choose from $(join(COORD_SYSTEMS, ", "))."))
-    return Int32(idx - 1)
-end
-coord_sys(x::Integer) = Int32(x)
-coord_sys(::Type{S}) where {S <: AbstractCoordinateSystem} = coord_sys(nameof(S))
-coord_sys(x::AbstractCoordinateSystem) = coord_sys(typeof(x))
-coord_sys(v::CoordinateVector) = coord_sys(v.sym)
-coord_sys(::AbstractVector{<:CoordinateVector{<:Any, C}}) where {C} = coord_sys(C)
+# Position gives IRBEM's `sysaxes` code (0-based)
+const SYSAXES = ("GDZ", "GEO", "GSM", "GSE", "SM", "GEI", "MAG", "SPH", "RLL", "HEE", "HAE", "HEEQ", "TOD", "J2000", "TEME")
 
-parse_coord_transform(pair::Pair) = pair.first, pair.second
-parse_coord_transform(s::Symbol) = parse_coord_transform(String(s))
-# "geo2gsm", "GEO_to_GSM", "geo2j2000", ...; names may contain '2', so match known names
-function parse_coord_transform(s::AbstractString)
-    u = uppercase(replace(s, r"_to_"i => "2"))
-    for c in COORD_SYSTEMS
-        prefix = string(c, "2")
-        startswith(u, prefix) || continue
-        out = Symbol(chopprefix(u, prefix))
-        out in COORD_SYSTEMS && return c, out
-    end
-    throw(ArgumentError("Could not parse coordinate system conversion string: '$s'. Expected format like 'geo2gsm'."))
+# IRBEM `sysaxes` code of a coordinate system name (case-insensitive)
+function coord_sys(name::Union{AbstractString, Symbol})
+    idx = findfirst(==(uppercase(String(name))), SYSAXES)
+    isnothing(idx) && throw(ArgumentError("Unknown coordinate system: $name. Choose from $(join(SYSAXES, ", "))."))
+    return Int32(idx - 1)
 end
 
 function clean_posit!(posit::Array{T, 3}, Blocal::Matrix{T}, Nposit) where {T}

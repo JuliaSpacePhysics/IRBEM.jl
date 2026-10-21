@@ -26,7 +26,7 @@ See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for m
 - [`drift_bounce_orbit`](@ref): Trace a full bounce orbit for particles with mirror point at input location
 
 ## Coordinates transformations
-- [`transform`](@ref): Transform coordinates from one system to another
+- [`coord_trans`](@ref): Transform coordinates from one system to another
 
 ## Library information
 - [`get_igrf_version`](@ref): Returns the version number of the IGRF model
@@ -52,7 +52,7 @@ export make_lstar, landi2lstar, get_field_multi, get_mlt, get_hemi
 export get_bderivs
 export find_mirror_point, find_magequator, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
-export transform
+export coord_trans
 export get_igrf_version, irbem_fortran_version, irbem_fortran_release
 export MF75, TS87, TL87, T89, OPQ77, OPD88, T96, OM97, T01, T01S, T04, A00, T07, MT
 
@@ -68,8 +68,8 @@ const SIG2 = """model::MagneticField, X::AbstractDict, maginput=(; )"""
 const SIG_DOC = """
 ## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
-- `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time).
-- `coord` (optional): Coordinate system name, `Symbol` or type of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
+- `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time)
+- `coord` (optional): IRBEM name of the coordinate system of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
 - `kext` (optional): External field model selection (default: KEXT[])
 - `options` (optional): Model options (default: OPTIONS[])
 

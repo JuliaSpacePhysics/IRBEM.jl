@@ -21,7 +21,7 @@ end
 # Set up model inputs
 maginput = Dict("Kp" => 40.0)
 time = "2015-02-02T06:12:43"
-𝐫 = GDZ(651, 63, 15.9)
+𝐫 = [651, 63, 15.9] # GDZ: alt [km], lat, lon [deg]
 out = trace_field_line(time, 𝐫, maginput)
 
 # Plot field line
@@ -39,7 +39,7 @@ fig
 ```@example mag_model
 maginput = Dict("Kp"=>0.0)
 posits = mapreduce(hcat, 0:20:360) do x3
-    output = trace_field_line(time, GDZ(651, 55, x3), maginput)
+    output = trace_field_line(time, [651, 55, x3], maginput)
     output.posit
 end
 
