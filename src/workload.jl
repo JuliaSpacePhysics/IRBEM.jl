@@ -1,7 +1,7 @@
 function workload()
     kext = T89
     t = DateTime("2015-02-02T06:12:43")
-    𝐫 = GDZ(651.0, 63.0, 15.9)
+    𝐫 = [651.0, 63.0, 15.9]
     maginput = (; Kp = 40.0)
     return (
         # Compute L* and related parameters

@@ -35,25 +35,7 @@ MT
 
 ## Coordinate systems
 
-See [IRBEM Documentation](https://prbem.github.io/IRBEM/api/general_information.html#coordinate-systems) for more details.
-
-```@docs
-GDZ
-GEO
-GSM
-GSE
-SM
-GEI
-MAG
-SPH
-RLL
-HEE
-HAE
-HEEQ
-TOD
-J2000
-TEME
-```
+See the [README](https://github.com/JuliaSpacePhysics/IRBEM.jl#coordinates).
 
 ## Computing magnetic field coordinates
 
@@ -94,7 +76,7 @@ drift_bounce_orbit
 ## Coordinates transformations
 
 ```@docs
-transform
+coord_trans
 ```
 
 ## Library information

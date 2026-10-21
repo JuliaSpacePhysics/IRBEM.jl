@@ -1,14 +1,14 @@
 # Reference: https://github.com/PRBEM/IRBEM/blob/main/python/IRBEM/test_IRBEM.py
 
 using TestItems, TestItemRunner
-@run_package_tests
+@run_package_tests filter = ti -> isempty(VERSION.prerelease) || !(:jet in ti.tags)
 
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(IRBEM)
 end
 
-@testitem "JET" begin
+@testitem "JET" tags = [:jet] begin
     using JET
     IRBEM.workload()
     @test_call IRBEM.workload()
@@ -21,7 +21,7 @@ end
     model = MagneticField(options = [0, 0, 0, 0, 0], kext = kext)
     dipol_model = MagneticField(options = [0, 0, 5, 0, 5], kext = 0)
     t = DateTime("2015-02-02T06:12:43")
-    x = [600.0, 60.0, 50.0]
+    x = [600.0, 60.0, 50.0] # GDZ: alt, lat, lon
     X = Dict(
         "dateTime" => t,
         "x1" => x[1],  # km
@@ -61,27 +61,22 @@ end
     )
     @test approx(make_lstar(model, X, maginput), l_star_true)
     @test approx(make_lstar(t, x, maginput; coord = "GDZ", kext), l_star_true)
-    @test approx(make_lstar(t, x, maginput_nt; coord = :GDZ, kext), l_star_true)
-    @test approx(make_lstar(t, GDZ(x), maginput_nt; kext), l_star_true)
+    @test approx(make_lstar(t, x, maginput_nt; kext), l_star_true)
     @test approx(make_lstar([t, t], [x, x], (; Kp = [40.0, 40.0]); kext), map(v -> fill(v, 2), l_star_true))
     # A scalar maginput is shared by all points
     @test make_lstar([t, t, t], [x, x, x], maginput; kext).Lm ≈ fill(l_star_true.Lm, 3)
-    # The coordinate system of a vector of CoordinateVector comes from its elements
-    xgeo = GEO(transform(t, x, "GDZ", "GEO"))
-    @test make_lstar([t, t], [xgeo, xgeo], maginput_nt; kext).Lm ≈ fill(l_star_true.Lm, 2) rtol = 1.0e-6
     @test_throws DimensionMismatch make_lstar([t, t], x, maginput_nt; kext)
     # Output shape follows the time input, not the number of points
     @test make_lstar([t], [x], maginput_nt; kext).Lm isa Vector
-    @inferred make_lstar(t, GDZ(x), maginput_nt; kext)
-    @test_throws ArgumentError make_lstar(t, GDZ(x), maginput_nt; coord = "GDZ", kext)
+    @inferred make_lstar(t, x, maginput_nt; kext)
     # Unset model inputs are missing for IRBEM, not zero
-    @test isnan(make_lstar(t, GDZ(x); kext).Lm)
+    @test isnan(make_lstar(t, x; kext).Lm)
 end
 
 @testitem "landi2lstar" setup = [Share] begin
-    pos = GEO(4.0, 0.0, 0.5)
-    exact = make_lstar(t, pos; kext = OPQ77, options = [1, 0, 0, 0, 0])
-    fast = landi2lstar(t, pos)
+    pos = [4.0, 0.0, 0.5]
+    exact = make_lstar(t, pos; coord = "GEO", kext = OPQ77, options = [1, 0, 0, 0, 0])
+    fast = landi2lstar(t, pos; coord = "GEO")
     @test fast.Lm == exact.Lm
     @test fast.Lstar ≈ exact.Lstar rtol = 0.02
     # IRBEM overwrites options in place; user options must not change
@@ -91,7 +86,7 @@ end
 end
 
 @testitem "get_hemi" setup = [Share] begin
-    @test get_hemi([t, t], [GDZ(x), GDZ(600.0, -60.0, 50.0)], maginput_nt; kext) == [1, -1]
+    @test get_hemi([t, t], [x, [600.0, -60.0, 50.0]], maginput_nt; kext) == [1, -1]
     @test get_hemi(model, X, maginput) == 1
 end
 
@@ -111,7 +106,7 @@ end
     @test res.Bmag ≈ 42271.43059990003
     @test res.gradBmag ≈ [-49644.37271032293, -46030.37495428827, -83024.03530787815]
     @test size(res.diffB) == (3, 3)
-    @test approx(res, get_bderivs(t, GDZ(x), 0.1, maginput_nt; kext))
+    @test approx(res, get_bderivs(t, x, 0.1, maginput_nt; kext))
 end
 
 @testitem "get_mlt" setup = [Share] begin
@@ -140,7 +135,7 @@ end
 @testitem "trace_field_line" setup = [Share] begin
     res = trace_field_line(model, X, maginput)
     @test length(res.Blocal) == size(res.posit, 2) == res.Nposit
-    @test approx(res, trace_field_line(t, GDZ(x), maginput_nt; kext))
+    @test approx(res, trace_field_line(t, x, maginput_nt; kext))
     @test_throws ArgumentError trace_field_line([t, t], [x, x], maginput_nt; kext)
 end
 
@@ -167,7 +162,7 @@ end
     code = """
     using IRBEM, Dates
     t = DateTime(2015, 2, 2, 6, 12, 43)
-    f(i) = make_lstar(t, GDZ(600.0 + 10i, 60.0, 50.0), (; Kp = 40.0); kext = isodd(i) ? "T89" : "OPQ77").Lm
+    f(i) = make_lstar(t, [600.0 + 10i, 60.0, 50.0], (; Kp = 40.0); kext = isodd(i) ? "T89" : "OPQ77").Lm
     serial = f.(1:100)
     threaded = similar(serial)
     Threads.@threads for i in 1:100
@@ -178,24 +173,6 @@ end
     @test success(`$(Base.julia_cmd()) -t 4 --project=$(Base.active_project()) -e $code`)
 end
 
-@testitem "Coords transform (single/multi entry)" begin
-    using Dates, IRBEM
-
-    # Single entry: GEO→GEO
-    time = DateTime(1996, 8, 28, 16, 46)
-    pos = [6.90274, -1.63624, 1.91669]
-    @test transform(time, pos, "GEO", "GEO") == pos
-    @test transform(time, pos, "GEO" => "GEO") == pos
-    @test transform(time, pos, "geo2geo") == pos
-
-    # Multi entry: GEO→MAG
-    times = [DateTime(1996, 8, 28, 16, 46), DateTime(1996, 8, 28, 16, 46)]
-    poses = [[6.90274, -1.63624, 1.91669] [6.90274, -1.63624, 1.91669]]
-    multi_result = transform(times, poses, "GEO", "MAG")
-    @test multi_result[:, 1] == multi_result[:, 2] == transform(time, pos, :GEO, :MAG)
-    @test size(multi_result) == size(poses)
-end
-
 @testitem "Utility functions" begin
     using Dates
 
@@ -204,14 +181,13 @@ end
     @test IRBEM.parse_kext(5) == 5
     @test_throws ArgumentError IRBEM.parse_kext("T99")
 
-    @test IRBEM.coord_sys("GDZ") == IRBEM.coord_sys(GDZ) == IRBEM.coord_sys(:gdz) == 0
-    @test IRBEM.coord_sys("gsm") == 2
-    @test IRBEM.coord_sys(TEME) == 14
-    @test IRBEM.parse_coord_transform("J20002geo") == (:J2000, :GEO)
-    @test IRBEM.parse_coord_transform("gsm_to_sm") == (:GSM, :SM)
+    @test IRBEM.coord_sys("GDZ") == 0
+    @test IRBEM.coord_sys("gsm") == IRBEM.coord_sys(:GSM) == 2
+    @test IRBEM.coord_sys("TEME") == 14
+    @test_throws ArgumentError IRBEM.coord_sys("RTN")
 
-    @test_throws ArgumentError make_lstar(DateTime(2020), GDZ(600.0, 60.0, 50.0), (; kp = 40.0))
-    @test_throws ArgumentError make_lstar(DateTime(2020), GDZ(600.0, 60.0, 50.0); options = [0, 0, 0])
+    @test_throws ArgumentError make_lstar(DateTime(2020), [600.0, 60.0, 50.0], (; kp = 40.0))
+    @test_throws ArgumentError make_lstar(DateTime(2020), [600.0, 60.0, 50.0]; options = [0, 0, 0])
 
     dt = DateTime("2015-02-02T06:12:43")
     @test IRBEM.get_datetime(Dict("dateTime" => dt)) == dt
