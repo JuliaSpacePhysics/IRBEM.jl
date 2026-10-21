@@ -8,13 +8,13 @@ See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for m
 ## Computing magnetic field coordinates
 - [`make_lstar`](@ref): Compute magnetic coordinates at a spacecraft position
 - [`landi2lstar`](@ref): Fast empirical L* for locally mirroring particles
-- [`get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
+- [`IRBEM.get_mlt`](@ref): Get Magnetic Local Time from GEO position and date
 - [`get_hemi`](@ref): Get magnetic hemisphere of input location
 
 ## Points of interest on the field line
 - [`find_mirror_point`](@ref): Find magnitude and location of mirror point along field line
 - [`find_foot_point`](@ref): Find footprint of field line in a given hemisphere
-- [`find_magequator`](@ref): Find coordinates of magnetic equator from field line tracing
+- [`IRBEM.find_magequator`](@ref): Find coordinates of magnetic equator from field line tracing
 
 ## Magnetic field computation
 - [`get_field_multi`](@ref): Compute GEO vector of magnetic field at input location
@@ -26,7 +26,7 @@ See the [Documentation](https://juliaspacephysics.github.io/IRBEM.jl/dev/) for m
 - [`drift_bounce_orbit`](@ref): Trace a full bounce orbit for particles with mirror point at input location
 
 ## Coordinates transformations
-- [`transform`](@ref): Transform coordinates from one system to another
+- [`IRBEM.transform`](@ref): Transform coordinates from one system to another
 
 ## Library information
 - [`get_igrf_version`](@ref): Returns the version number of the IGRF model
@@ -45,14 +45,18 @@ module IRBEM
 using Dates
 using IRBEM_jll
 using StaticArrays
-using TimeseriesUtilities: mapsamples, times
+using GeoCotrans: GeoCotrans, AbstractReferenceFrame, AbstractRepresentation, CoordinateVector, Cartesian3, Spherical, Geodetic,
+    GEO, GSM, GSE, SM, GEI, MAG, J2000, GDZ, getcsys, car2sph, sph2car
+using TimeseriesUtilities: dimnum, mapsamples, rebuild, tdimnum, times, unwrap
 
 export MagInput, MagneticField
-export make_lstar, landi2lstar, get_field_multi, get_mlt, get_hemi
+export make_lstar, landi2lstar, get_field_multi, get_hemi
 export get_bderivs
-export find_mirror_point, find_magequator, find_foot_point
+export find_mirror_point, find_foot_point
 export trace_field_line, drift_shell, drift_bounce_orbit
-export transform
+# the same bindings as GeoCotrans's, so `using GeoCotrans, IRBEM` does not clash
+export GEO, GSM, GSE, SM, GEI, MAG, J2000, GDZ, CoordinateVector
+VERSION >= v"1.11" && eval(Meta.parse("public transform, get_mlt, find_magequator"))
 export get_igrf_version, irbem_fortran_version, irbem_fortran_release
 export MF75, TS87, TL87, T89, OPQ77, OPD88, T96, OM97, T01, T01S, T04, A00, T07, MT
 
@@ -69,8 +73,8 @@ const SIG_DOC = """
 ## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
 - `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time).
-      If `x` is a `CoordinateVector` (e.g. `GDZ(...)`) or a vector of them, omit `coord`.
-- `coord` (optional): Coordinate system name, `Symbol` or type (default: "GDZ")
+      If `x` is a `CoordinateVector` (e.g. `GDZ(lat, lon, alt)`) or a vector of them, omit `coord`.
+- `coord` (optional): coordinate system of `x` (default: "GDZ", i.e. IRBEM's `(alt, lat, lon)`); see README "Coordinates"
 - `kext` (optional): External field model selection (default: KEXT[])
 - `options` (optional): Model options (default: OPTIONS[])
 

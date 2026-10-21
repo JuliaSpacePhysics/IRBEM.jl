@@ -76,40 +76,22 @@ end
 MagInput(nt) = MagInput(; nt...)
 MagInput(d::AbstractDict) = MagInput(; (Symbol(k) => v for (k, v) in d)...)
 
-abstract type AbstractCoordinateSystem end
-
-struct CoordinateVector{T, C} <: FieldVector{3, T}
-    x::T
-    y::T
-    z::T
-    sym::C
+# Frames IRBEM has and GeoCotrans lacks; the shared ones (GEO, GSM, ...) are GeoCotrans's
+for sys in (:HEE, :HAE, :HEEQ, :TEME)
+    @eval begin
+        struct $sys <: AbstractReferenceFrame end
+        $sys(x, y, z) = CoordinateVector{$sys}(x, y, z)
+        function $sys(x)
+            length(x) == 3 || throw(DimensionMismatch("expected 3 components, got $(length(x))"))
+            x isa CoordinateVector && !(x isa CoordinateVector{$sys, Cartesian3}) &&
+                throw(ArgumentError("$(typeof(x)) is not a Cartesian $($(QuoteNode(sys))) position; use `IRBEM.transform`"))
+            return $sys(x[1], x[2], x[3])
+        end
+        export $sys
+    end
 end
 
-# Arithmetic results (e.g. `a - b`) are not positions in a coordinate system
-StaticArrays.similar_type(::Type{<:CoordinateVector{T}}, ::Type{T}, s::Size) where {T} = similar_type(SVector{3, T}, T, s)
-
-# Order gives IRBEM's `sysaxes` code (0-based)
-const COORD_SYSTEMS = (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :TOD, :J2000, :TEME)
-
-for sys in COORD_SYSTEMS
-    @eval struct $sys <: AbstractCoordinateSystem end
-    @eval $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
-    @eval $sys(x) = (length(x) == 3 || throw(DimensionMismatch("expected 3 components, got $(length(x))")); $sys(x[1], x[2], x[3]))
-    @eval export $sys
-end
-
-@doc "Geodetic (altitude, latitude, east longitude - km, deg, deg)" GDZ
-@doc "Geocentric Geographic (Earth radii)" GEO
-@doc "Geocentric Solar Magnetospheric (GSM)\n\nX points sunward from Earth's center. The X-Z plane is defined to contain Earth's dipole axis (positive North)." GSM
-@doc "Geocentric Solar Ecliptic (GSE) (Earth radii)" GSE
-@doc "Solar Magnetic (SM)" SM
-@doc "Geocentric Equatorial Inertial (GEI), true of date (Earth radii)" GEI
-@doc "Geomagnetic (MAG)" MAG
-@doc "Spherical GEO (SPH) (radial distance, latitude, east longitude - Earth radii, deg, deg)" SPH
-@doc "Geodetic (radial distance, latitude, East longitude - Earth radii, deg, deg)\n\nA re-expression of [`GDZ`](@ref) coordinates using radial distance instead of altitude above the reference ellipsoid." RLL
 @doc "Heliocentric Earth Ecliptic (HEE) (Earth radii)" HEE
 @doc "Heliocentric Aries Ecliptic (HAE) (Earth radii)" HAE
 @doc "Heliocentric Earth Equatorial (HEEQ) (Earth radii)" HEEQ
-@doc "True of Date (TOD), same as [`GEI`](@ref) (Earth radii)" TOD
-@doc "[`GEI`](@ref) at J2000: mean equator and mean equinox of J2000 (Earth radii)" J2000
 @doc "True Equator Mean Equinox (TEME), the inertial system of SGP4 (Earth radii)" TEME

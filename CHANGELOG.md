@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: coordinate types are GeoCotrans.jl's. `GEO`, `GSM`, `GSE`, `SM`, `GEI`, `MAG`, `J2000`, `GDZ` and `CoordinateVector` are re-exported from GeoCotrans; `HEE`, `HAE`, `HEEQ`, `TEME` subtype its frame type. `CoordinateVector` has no `sym` field.
+- **Breaking**: `GDZ(lat, lon, alt)` instead of `GDZ(alt, lat, lon)`. A latitude outside [-90, 90] throws, which catches most old-order calls. IRBEM names keep IRBEM's order: `make_lstar(t, [alt, lat, lon], "GDZ")` is unchanged.
+- **Breaking**: `transform(from => to, x, t; dim)`, `transform(from => to, A; dim)` and `transform(to, x::CoordinateVector, t)`, as in GeoCotrans, replace `transform(time, pos, in, out)`, `transform(time, pos, in => out)` and `transform(time, pos, "in2out")`.
+- **Breaking**: `transform`, `get_mlt` and `find_magequator` are no longer exported (GeoCotrans exports its own); call them as `IRBEM.transform` etc.
+- `get_mlt` converts a `CoordinateVector` in any system to GEO; it previously read its components as Cartesian GEO.
+
+### Removed
+
+- **Breaking**: `SPH`, `RLL`, `TOD` constructors and `S(time, pos::CoordinateVector)` conversions (e.g. `GSM(t, pos)`); use `IRBEM.transform(GSM, pos, t)`, `CoordinateVector{GEO, Spherical}`, or the names `"SPH"`, `"RLL"`, `"TOD"`.
+
 ## [0.2.0] - 2026-10-02
 
 ### Changed

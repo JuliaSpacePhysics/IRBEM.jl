@@ -27,7 +27,10 @@ function get_datetime(X::AbstractDict)
 end
 
 const CoordVectors = Union{CoordinateVector, AbstractVector{<:CoordinateVector}}
-const CoordName = Union{AbstractString, Symbol, Integer, Type{<:AbstractCoordinateSystem}}
+const CoordSpec = Union{
+    AbstractString, Symbol, Integer, AbstractReferenceFrame, Type{<:AbstractReferenceFrame},
+    typeof(GDZ), Tuple{AbstractReferenceFrame, AbstractRepresentation},
+}
 
 """
     prepare_irbem(args...; kw...) -> (p, single)
@@ -37,20 +40,21 @@ arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
 `single` is `true` when `time` is a scalar.
 """
 prepare_irbem(time, x, coord = "GDZ", maginput = (;); kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, prepare_loc(x), coord_sys(coord), maginput, kext, options)
+    _prepare(time, prepare_loc(x), _rawsys(coord), maginput, kext, options)
 
 prepare_irbem(time, x::CoordVectors, maginput = (;); kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, prepare_loc(x), coord_sys(x), maginput, kext, options)
+    _prepare(time, prepare_loc(x), _sys(x), maginput, kext, options)
 
-function prepare_irbem(time, x::CoordVectors, coord::CoordName, maginput = (;); kw...)
-    coord_sys(coord) == coord_sys(x) || throw(ArgumentError("coord = $coord contradicts the coordinate system of the input positions"))
+function prepare_irbem(time, x::CoordVectors, coord::CoordSpec, maginput = (;); kw...)
+    _csys(coord) == _getcsys(x) || throw(ArgumentError("coord = $coord contradicts the coordinate system of the input positions"))
     return prepare_irbem(time, x, maginput; kw...)
 end
 
 prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
-    _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), model.sysaxes, maginput, model.kext, model.options)
+    _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), (model.sysaxes, nothing), maginput, model.kext, model.options)
 
-function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
+function _prepare(time, loc, (sysaxes, rep), maginput, kext, options)
+    x1, x2, x3 = _to_irbem_loc(rep, loc)
     iyear, idoy, ut = decompose_time(time)
     n = length(ut)
     length(x1) == n || throw(DimensionMismatch("got $n time(s) but $(length(x1)) position(s)"))
@@ -155,32 +159,70 @@ function parse_kext(kext)
     return Int32(idx - 1)
 end
 
-"IRBEM `sysaxes` code of coordinate system `x` (name, `Symbol`, type, instance or `CoordinateVector`)."
+# Position gives IRBEM's `sysaxes` code (0-based)
+const SYSAXES = (:GDZ, :GEO, :GSM, :GSE, :SM, :GEI, :MAG, :SPH, :RLL, :HEE, :HAE, :HEEQ, :TOD, :J2000, :TEME)
+
+"IRBEM `sysaxes` code of a coordinate system name (case-insensitive), code, or Cartesian frame."
 function coord_sys(x::Union{Symbol, AbstractString})
-    idx = findfirst(==(Symbol(x)), COORD_SYSTEMS)
-    isnothing(idx) && (idx = findfirst(==(Symbol(uppercase(String(x)))), COORD_SYSTEMS))
-    isnothing(idx) && throw(ArgumentError("Unknown coordinate system: $x. Choose from $(join(COORD_SYSTEMS, ", "))."))
+    idx = findfirst(==(Symbol(x)), SYSAXES)
+    isnothing(idx) && (idx = findfirst(==(Symbol(uppercase(String(x)))), SYSAXES))
+    isnothing(idx) && throw(ArgumentError("Unknown coordinate system: $x. Choose from $(join(SYSAXES, ", "))."))
     return Int32(idx - 1)
 end
 coord_sys(x::Integer) = Int32(x)
-coord_sys(::Type{S}) where {S <: AbstractCoordinateSystem} = coord_sys(nameof(S))
-coord_sys(x::AbstractCoordinateSystem) = coord_sys(typeof(x))
-coord_sys(v::CoordinateVector) = coord_sys(v.sym)
-coord_sys(::AbstractVector{<:CoordinateVector{<:Any, C}}) where {C} = coord_sys(C)
+coord_sys(::Type{F}) where {F <: AbstractReferenceFrame} = coord_sys(nameof(F))
+coord_sys(f::AbstractReferenceFrame) = coord_sys(typeof(f))
 
-parse_coord_transform(pair::Pair) = pair.first, pair.second
-parse_coord_transform(s::Symbol) = parse_coord_transform(String(s))
-# "geo2gsm", "GEO_to_GSM", "geo2j2000", ...; names may contain '2', so match known names
-function parse_coord_transform(s::AbstractString)
-    u = uppercase(replace(s, r"_to_"i => "2"))
-    for c in COORD_SYSTEMS
-        prefix = string(c, "2")
-        startswith(u, prefix) || continue
-        out = Symbol(chopprefix(u, prefix))
-        out in COORD_SYSTEMS && return c, out
-    end
-    throw(ArgumentError("Could not parse coordinate system conversion string: '$s'. Expected format like 'geo2gsm'."))
+# `(frame, representation)` of each `sysaxes` code; TOD is GEI in IRBEM, RLL has no GeoCotrans representation
+const SYSAXES_CSYS = (
+    GDZ(), (GEO(), Cartesian3()), (GSM(), Cartesian3()), (GSE(), Cartesian3()), (SM(), Cartesian3()),
+    (GEI(), Cartesian3()), (MAG(), Cartesian3()), (GEO(), Spherical()), nothing,
+    (HEE(), Cartesian3()), (HAE(), Cartesian3()), (HEEQ(), Cartesian3()), (GEI(), Cartesian3()),
+    (J2000(), Cartesian3()), (TEME(), Cartesian3()),
+)
+
+function _csys(x::Union{Symbol, AbstractString, Integer})
+    c = coord_sys(x)
+    csys = 0 <= c < length(SYSAXES) ? SYSAXES_CSYS[c + 1] : nothing
+    return @something csys throw(ArgumentError("$x has no typed coordinate equivalent"))
 end
+_csys(f::AbstractReferenceFrame) = (f, Cartesian3())
+_csys(::Type{F}) where {F <: AbstractReferenceFrame} = (F(), Cartesian3())
+_csys(::typeof(GDZ)) = GDZ()
+_csys(c::Tuple{AbstractReferenceFrame, AbstractRepresentation}) = c
+_csys(x) = throw(ArgumentError("Unknown coordinate system $(repr(x))"))
+
+_getcsys(x::CoordinateVector) = getcsys(x)
+_getcsys(::AbstractVector{<:CoordinateVector{F, R}}) where {F, R} = (F(), R())
+
+# `(sysaxes, representation)` to call IRBEM with; names and codes pass components in IRBEM's order
+_sys(x::Union{Symbol, AbstractString, Integer}) = (coord_sys(x), nothing)
+_sys(x::CoordVectors) = _sys(_getcsys(x))
+_sys(x) = _sys(_csys(x))
+_sys((f, r)::Tuple{AbstractReferenceFrame, AbstractRepresentation}) = (coord_sys(f), r)
+_sys((_, r)::Tuple{GEO, Geodetic}) = (Int32(0), r)
+_sys((f, _)::Tuple{AbstractReferenceFrame, Geodetic}) = throw(ArgumentError("IRBEM has no geodetic $(nameof(typeof(f))) coordinates"))
+
+# Raw components carry no representation, so `GDZ` and "GDZ" would read the same array in opposite orders:
+# only names and codes (IRBEM's order) or frames (Cartesian) describe them; typed representations need a `CoordinateVector`.
+_rawsys(x::Union{Symbol, AbstractString, Integer}) = _sys(x)
+_rawsys(f::Union{AbstractReferenceFrame, Type{<:AbstractReferenceFrame}}) = (coord_sys(f), nothing)
+_rawsys(x) = throw(ArgumentError("raw components in $(repr(x)) are ambiguous; wrap them in a `CoordinateVector` (e.g. `GDZ(lat, lon, alt)`) or use an IRBEM name such as \"GDZ\" (IRBEM's component order)"))
+
+# Spherical positions go to IRBEM as Cartesian in their frame
+_isidentity(rep) = rep isa Union{Nothing, Cartesian3}
+_to_irbem(_, x) = x
+_to_irbem(::Spherical, x) = sph2car(x...)
+function _to_irbem(::Geodetic, (lat, lon, alt))
+    abs(lat) > 90 && throw(ArgumentError("geodetic latitude $lat is outside [-90, 90]; `GDZ` takes (lat, lon, alt)"))
+    return SA[alt, lat, lon]
+end
+_from_irbem(_, x) = x
+_from_irbem(::Spherical, x) = car2sph(x...)
+_from_irbem(::Geodetic, (alt, lat, lon)) = SA[lat, lon, alt]
+
+_to_irbem_loc(rep, loc) = _isidentity(rep) ? loc : _unzip3(map((a, b, c) -> _to_irbem(rep, SA[a, b, c]), loc...))
+_unzip3(v) = (getindex.(v, 1), getindex.(v, 2), getindex.(v, 3))
 
 function clean_posit!(posit::Array{T, 3}, Blocal::Matrix{T}, Nposit) where {T}
     for (i, n) in enumerate(Nposit)
