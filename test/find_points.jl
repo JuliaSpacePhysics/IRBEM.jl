@@ -12,6 +12,7 @@
 end
 
 @testitem "find_magequator" setup = [Share] begin
+    using IRBEM: find_magequator
     true_Bmin = 626.2258295723121
     true_XGEO = [2.1962220856733894, 2.8360222891612192, 0.3472455620354017]
     @test approx(find_magequator(model, X, maginput), (true_Bmin, true_XGEO))

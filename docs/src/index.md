@@ -36,22 +36,12 @@ MT
 ## Coordinate systems
 
 See [IRBEM Documentation](https://prbem.github.io/IRBEM/api/general_information.html#coordinate-systems) for more details.
+`GEO`, `GSM`, `GSE`, `SM`, `GEI`, `MAG`, `J2000`, `GDZ` and `CoordinateVector` are [GeoCotrans.jl](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/)'s; IRBEM adds:
 
 ```@docs
-GDZ
-GEO
-GSM
-GSE
-SM
-GEI
-MAG
-SPH
-RLL
 HEE
 HAE
 HEEQ
-TOD
-J2000
 TEME
 ```
 
@@ -60,7 +50,7 @@ TEME
 ```@docs
 make_lstar
 landi2lstar
-get_mlt
+IRBEM.get_mlt
 get_hemi
 ```
 
@@ -69,7 +59,7 @@ get_hemi
 
 ```@docs
 find_mirror_point
-find_magequator
+IRBEM.find_magequator
 find_foot_point
 ```
 
@@ -94,7 +84,7 @@ drift_bounce_orbit
 ## Coordinates transformations
 
 ```@docs
-transform
+IRBEM.transform
 ```
 
 ## Library information

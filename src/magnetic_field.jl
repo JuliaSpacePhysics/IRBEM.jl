@@ -11,7 +11,7 @@ $SIG_DOC
 
 # Examples
 ```jldoctest
-julia> make_lstar("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), (; Kp = 40.0); kext = "T89")
+julia> make_lstar("2015-02-02T06:12:43", GDZ(60.0, 50.0, 600.0), (; Kp = 40.0); kext = "T89")
 (Lm = 3.5597242229067536, Lstar = NaN, Blocal = 42271.43059990003, Bmin = 626.2258295723121, XJ = 7.020585390925573, MLT = 10.170297893176182)
 ```
 
@@ -74,7 +74,7 @@ $SIG_DOC
 
 # Examples
 ```jldoctest
-julia> get_bderivs("2015-02-02T06:12:43", GDZ(600.0, 60.0, 50.0), 0.1, (; Kp = 40.0); kext = "T89") |> pprint
+julia> get_bderivs("2015-02-02T06:12:43", GDZ(60.0, 50.0, 600.0), 0.1, (; Kp = 40.0); kext = "T89") |> pprint
 (Bgeo = [-21079.764883133903, -21504.21460705096, -29666.24532305791],
  Bmag = 42271.43059990003,
  gradBmag = [-49644.37271032293, -46030.37495428827, -83024.03530787815],
@@ -114,7 +114,7 @@ end
     get_mlt(X::AbstractDict)
     get_mlt(A; dim = nothing)
 
-Get Magnetic Local Time (MLT) from a Cartesian GEO position `𝐫` and `time`.
+Get Magnetic Local Time (MLT) from a GEO position `𝐫` (Cartesian, or a `CoordinateVector` in any system) and `time`.
 `X` is a dictionary with keys `x1`, `x2`, `x3` (GEO position) and `dateTime` or `Time`.
 `A` is a time series of GEO positions (e.g. `DimArray`, `KeyedArray`, or `Timed(A, times; dim)`, see TimeseriesUtilities.jl);
 returns MLT per time in the same container.
@@ -122,9 +122,13 @@ returns MLT per time in the same container.
 function get_mlt(𝐫, time)
     iyear, idoy, ut = decompose_time_s(time)
     mlt = Ref{Float64}()
-    get_mlt1!(iyear, idoy, ut, SVector{3, Float64}(𝐫), mlt)
+    get_mlt1!(iyear, idoy, ut, _geo(𝐫, time), mlt)
     return mlt[]
 end
+
+_geo(x, _) = SVector{3, Float64}(x)
+_geo(x::CoordinateVector, t) = SVector{3, Float64}(transform(GEO, x, t))
+_geo(x::CoordinateVector{GEO, Cartesian3}, _) = SVector{3, Float64}(x)
 
 get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
 get_mlt(time, 𝐫::AbstractVector) = get_mlt(𝐫, time)

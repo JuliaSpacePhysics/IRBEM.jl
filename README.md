@@ -26,12 +26,13 @@ The IRBEM library is a set of source codes dedicated to radiation belt modeling.
 ```julia
 using Pkg; Pkg.add("IRBEM")
 using IRBEM
+using IRBEM: transform, get_mlt, find_magequator # not exported: GeoCotrans exports its own
 using Dates
 
 # Initialize the magnetic field model
 kext = T89
 t = DateTime("2015-02-02T06:12:43")
-𝐫 = GDZ(651, 63, 15.9)
+𝐫 = GDZ(63, 15.9, 651) # (lat [deg], lon [deg], alt [km])
 
 # Define magnetic field model inputs
 maginput = (; Kp = 40.0)
@@ -46,7 +47,25 @@ find_magequator(t, 𝐫, maginput; kext) # -> a namedtuple with fields Bmin and 
 
 # Calculate MLT
 get_mlt(t, 𝐫)
+
+# Transform coordinates
+transform(GDZ => GSM, 𝐫, t)
+transform(GSM, 𝐫, t)                         # -> GSM CoordinateVector
+transform("GEO" => "J2000", rand(3, 10), t)  # 3×n (or a vector of 3-vectors) with one time or one per sample; `dim = 1` for n×3
+# transform(GEO => GSM, A) for a time-keyed container A (e.g. a Ti×3 DimArray) keeps its dims and metadata
 ```
+
+### Coordinates
+
+Positions are [GeoCotrans.jl](https://github.com/JuliaSpacePhysics/GeoCotrans.jl) `CoordinateVector`s, and IRBEM reuses its frames,
+so `using GeoCotrans, IRBEM` does not clash:
+
+- Frames: `GEO`, `GSM`, `GSE`, `SM`, `GEI`, `MAG`, `J2000` (GeoCotrans) and `HEE`, `HAE`, `HEEQ`, `TEME` (IRBEM only); `GSM(x, y, z)` etc. build a Cartesian position.
+- `GDZ(lat, lon, alt)`: geodetic GEO; `CoordinateVector{GEO, Spherical}(r, θ, φ)`: spherical, colatitude and longitude in radians.
+- `CoordinateVector`s carry their system: `transform(GDZ, x, t)` or `transform((GEO(), Spherical()), x, t)` return them in these conventions.
+- Raw components (vectors, matrices) are described by a frame (Cartesian) or an IRBEM `sysaxes` name (`"GDZ"`, `:sph`, case-insensitive) or code, in IRBEM's component order:
+  `GDZ` is `(alt, lat, lon)`, `SPH`/`RLL` are `(r, lat, lon)` in degrees. So are the `coord` arguments of `make_lstar` & co. and `MagneticField(; sysaxes)`;
+  `RLL` and `TOD` exist only as names. Typed representations (`GDZ`, `(frame, representation)`) of raw components throw, as they would contradict the names' order.
 
 ## Acknowledgments
 
