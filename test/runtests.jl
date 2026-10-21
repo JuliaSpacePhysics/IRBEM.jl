@@ -146,24 +146,22 @@ end
 end
 
 @testitem "drift_shell" setup = [Share] begin
-    using NaNStatistics
     res = drift_shell(dipol_model, X, maginput)
     Lm = res.Lm
     @test Lm ≈ 4.326679 atol = 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
-    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1.0e-2
+    @test maximum(abs, filter(!isnan, L_posit .- Lm)) / Lm <= 1.0e-2
     @test count(!isnan, res.Blocal) == sum(res.Nposit)
 end
 
 @testitem "drift_bounce_orbit" setup = [Share] begin
-    using NaNStatistics
     res = drift_bounce_orbit(dipol_model, X, maginput)
     Lm = res.Lm
     @test Lm ≈ 4.326679 atol = 1.0e-2
     alt = X["x1"]
     @test abs((res.hmin - alt) / alt) <= 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
-    @test nanmaximum(abs.(L_posit .- Lm)) / Lm <= 1.0e-2
+    @test maximum(abs, filter(!isnan, L_posit .- Lm)) / Lm <= 1.0e-2
 end
 
 @testitem "Thread safety" begin
