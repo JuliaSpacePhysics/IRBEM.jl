@@ -6,8 +6,8 @@
     alpha = 90.0  # Local pitch angle in degrees
     result = find_mirror_point(model, X, alpha, maginput)
     @test approx(result, (true_Blocal, true_Bmin, true_POSIT))
-    @test approx(result, find_mirror_point(t, x, alpha, "GDZ", maginput; kext = "T89"))
-    multi = find_mirror_point([t, t], [x, x], alpha, "GDZ", maginput; kext = "T89")
+    @test approx(result, find_mirror_point(t, x, alpha, maginput; kext = "T89"))
+    multi = find_mirror_point([t, t], [x, x], alpha, maginput; coord = "GDZ", kext = "T89")
     @test multi.posit ≈ [true_POSIT true_POSIT]
 end
 
@@ -28,5 +28,5 @@ end
     stopAlt = 100
     hemiFlag = 0
     @test approx(find_foot_point(model, X, stopAlt, hemiFlag, maginput), _foot_point_true)
-    @test approx(find_foot_point(t, x, stopAlt, hemiFlag, "GDZ", maginput; kext = "T89"), _foot_point_true)
+    @test approx(find_foot_point(t, x, stopAlt, hemiFlag, maginput; kext = "T89"), _foot_point_true)
 end

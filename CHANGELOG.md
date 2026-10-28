@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: `coord` is a keyword: `make_lstar(time, x, maginput; coord = "GEO", kext)` instead of `make_lstar(time, x, "GEO", maginput; kext)`, likewise for the other `time, x` routines.
+
 ## [0.2.0] - 2026-10-02
 
 ### Changed

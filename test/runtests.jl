@@ -60,21 +60,20 @@ end
         XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
     @test approx(make_lstar(model, X, maginput), l_star_true)
-    @test approx(make_lstar(t, x, "GDZ", maginput; kext), l_star_true)
-    @test approx(make_lstar(t, x, :GDZ, maginput_nt; kext), l_star_true)
+    @test approx(make_lstar(t, x, maginput; coord = "GDZ", kext), l_star_true)
+    @test approx(make_lstar(t, x, maginput_nt; coord = :GDZ, kext), l_star_true)
     @test approx(make_lstar(t, GDZ(x), maginput_nt; kext), l_star_true)
-    @test approx(make_lstar([t, t], [x, x], "GDZ", (; Kp = [40.0, 40.0]); kext), map(v -> fill(v, 2), l_star_true))
+    @test approx(make_lstar([t, t], [x, x], (; Kp = [40.0, 40.0]); kext), map(v -> fill(v, 2), l_star_true))
     # A scalar maginput is shared by all points
-    @test make_lstar([t, t, t], [x, x, x], "GDZ", maginput; kext).Lm ≈ fill(l_star_true.Lm, 3)
+    @test make_lstar([t, t, t], [x, x, x], maginput; kext).Lm ≈ fill(l_star_true.Lm, 3)
     # The coordinate system of a vector of CoordinateVector comes from its elements
     xgeo = GEO(transform(t, x, "GDZ", "GEO"))
     @test make_lstar([t, t], [xgeo, xgeo], maginput_nt; kext).Lm ≈ fill(l_star_true.Lm, 2) rtol = 1.0e-6
-    @test_throws DimensionMismatch make_lstar([t, t], x, "GDZ", maginput_nt; kext)
+    @test_throws DimensionMismatch make_lstar([t, t], x, maginput_nt; kext)
     # Output shape follows the time input, not the number of points
-    @test make_lstar([t], [x], "GDZ", maginput_nt; kext).Lm isa Vector
+    @test make_lstar([t], [x], maginput_nt; kext).Lm isa Vector
     @inferred make_lstar(t, GDZ(x), maginput_nt; kext)
-    @test make_lstar(t, GDZ(x), "GDZ", maginput_nt; kext).Lm ≈ l_star_true.Lm
-    @test_throws ArgumentError make_lstar(t, GDZ(x), "GEO", maginput_nt; kext)
+    @test_throws ArgumentError make_lstar(t, GDZ(x), maginput_nt; coord = "GDZ", kext)
     # Unset model inputs are missing for IRBEM, not zero
     @test isnan(make_lstar(t, GDZ(x); kext).Lm)
 end
@@ -142,7 +141,7 @@ end
     res = trace_field_line(model, X, maginput)
     @test length(res.Blocal) == size(res.posit, 2) == res.Nposit
     @test approx(res, trace_field_line(t, GDZ(x), maginput_nt; kext))
-    @test_throws ArgumentError trace_field_line([t, t], [x, x], "GDZ", maginput_nt; kext)
+    @test_throws ArgumentError trace_field_line([t, t], [x, x], maginput_nt; kext)
 end
 
 @testitem "drift_shell" setup = [Share] begin

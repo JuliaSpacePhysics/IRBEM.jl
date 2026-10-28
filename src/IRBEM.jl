@@ -63,14 +63,13 @@ include("utils.jl")
 const KEXT = Ref{Int32}(OPQ77)
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
-const SIG1 = """time, x, [coord="GDZ",] maginput=(; ); kext=KEXT[], options=OPTIONS[]"""
+const SIG1 = """time, x, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[]"""
 const SIG2 = """model::MagneticField, X::AbstractDict, maginput=(; )"""
 const SIG_DOC = """
 ## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
 - `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time).
-      If `x` is a `CoordinateVector` (e.g. `GDZ(...)`) or a vector of them, omit `coord`.
-- `coord` (optional): Coordinate system name, `Symbol` or type (default: "GDZ")
+- `coord` (optional): Coordinate system name, `Symbol` or type of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
 - `kext` (optional): External field model selection (default: KEXT[])
 - `options` (optional): Model options (default: OPTIONS[])
 

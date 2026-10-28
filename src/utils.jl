@@ -27,7 +27,6 @@ function get_datetime(X::AbstractDict)
 end
 
 const CoordVectors = Union{CoordinateVector, AbstractVector{<:CoordinateVector}}
-const CoordName = Union{AbstractString, Symbol, Integer, Type{<:AbstractCoordinateSystem}}
 
 """
     prepare_irbem(args...; kw...) -> (p, single)
@@ -36,15 +35,13 @@ Convert user inputs into the `(ntime, kext, options, sysaxes, iyear, idoy, ut, x
 arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
 `single` is `true` when `time` is a scalar.
 """
-prepare_irbem(time, x, coord = "GDZ", maginput = (;); kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, prepare_loc(x), coord_sys(coord), maginput, kext, options)
+prepare_irbem(time, x, maginput = (;); coord = nothing, kext = KEXT[], options = OPTIONS[]) =
+    _prepare(time, prepare_loc(x), _sysaxes(x, coord), maginput, kext, options)
 
-prepare_irbem(time, x::CoordVectors, maginput = (;); kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, prepare_loc(x), coord_sys(x), maginput, kext, options)
-
-function prepare_irbem(time, x::CoordVectors, coord::CoordName, maginput = (;); kw...)
-    coord_sys(coord) == coord_sys(x) || throw(ArgumentError("coord = $coord contradicts the coordinate system of the input positions"))
-    return prepare_irbem(time, x, maginput; kw...)
+_sysaxes(_, coord) = coord_sys(something(coord, "GDZ"))
+function _sysaxes(x::CoordVectors, coord)
+    isnothing(coord) || throw(ArgumentError("`coord` is given by the type of the positions"))
+    return coord_sys(x)
 end
 
 prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
