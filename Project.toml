@@ -9,7 +9,6 @@ projects = ["docs", "test"]
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 IRBEM_jll = "65aecb69-0b26-50c5-b061-de07bd15962b"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 TimeseriesUtilities = "31d49243-0742-49c1-b8d2-db113b74581e"
 
 [weakdeps]
@@ -22,6 +21,5 @@ IRBEMGeoCotransExt = "GeoCotrans"
 Dates = "1"
 GeoCotrans = "0.3.7"
 IRBEM_jll = "5.0.0"
-StaticArrays = "1.9"
 TimeseriesUtilities = "0.3.4, 0.4"
 julia = "1.10"

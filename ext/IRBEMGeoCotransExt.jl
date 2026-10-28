@@ -2,12 +2,11 @@ module IRBEMGeoCotransExt
 
 using IRBEM: IRBEM, coord_sys, prepare_loc, _coord_trans
 using GeoCotrans: CoordinateVector, Cartesian3, Spherical, Geodetic, GEO, sph2car
-using StaticArrays: SVector, SA_F64
 
 # IRBEM `sysaxes` code and components
-_irbem(x::CoordinateVector{F, Cartesian3}) where {F} = coord_sys(String(nameof(F))), SVector{3, Float64}(x)
-_irbem(x::CoordinateVector{F, Spherical}) where {F} = coord_sys(String(nameof(F))), SVector{3, Float64}(sph2car(x...))
-_irbem(x::CoordinateVector{GEO, Geodetic}) = Int32(0), SA_F64[x[3], x[1], x[2]]
+_irbem(x::CoordinateVector{F, Cartesian3}) where {F} = coord_sys(String(nameof(F))), NTuple{3, Float64}(x)
+_irbem(x::CoordinateVector{F, Spherical}) where {F} = coord_sys(String(nameof(F))), NTuple{3, Float64}(sph2car(x...))
+_irbem(x::CoordinateVector{GEO, Geodetic}) = Int32(0), NTuple{3, Float64}((x[3], x[1], x[2]))
 
 IRBEM._loc(x::CoordinateVector, coord) = IRBEM._loc([x], coord)
 function IRBEM._loc(x::AbstractVector{<:CoordinateVector}, coord)
@@ -20,7 +19,7 @@ end
 
 function IRBEM._geo(x::CoordinateVector, t)
     sys, r = _irbem(x)
-    return sys == 1 ? r : SVector{3, Float64}(_coord_trans(sys, Int32(1), t, r))
+    return sys == 1 ? Ref(r) : _coord_trans(sys, Int32(1), t, collect(r))
 end
 
 end

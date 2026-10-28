@@ -95,12 +95,12 @@ function prepare_loc(x::AbstractMatrix)
     size(x, 1) == 3 || throw(DimensionMismatch("positions must be a 3×n matrix, got size $(size(x))"))
     return prepare_loc(view(x, 1, :), view(x, 2, :), view(x, 3, :))
 end
-prepare_loc(x::AbstractVector{<:AbstractVector}) = prepare_loc(getindex.(x, 1), getindex.(x, 2), getindex.(x, 3))
+prepare_loc(x::AbstractVector{<:Union{AbstractVector, Tuple}}) = prepare_loc(getindex.(x, 1), getindex.(x, 2), getindex.(x, 3))
 
 function prepare_options(options)
     length(options) == 5 || throw(ArgumentError("options must have 5 elements, got $(length(options))"))
     # A fresh copy: some routines (e.g. landi2lstar) overwrite `options`
-    return MVector{5, Int32}(options)
+    return collect(Int32, options)
 end
 
 """

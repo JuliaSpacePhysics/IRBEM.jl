@@ -53,7 +53,7 @@ coord_trans("GDZ", "GSM", t, 𝐫)
 
 ### Coordinates
 
-Positions are raw components (vector, 3×n matrix, vector of vectors) in the IRBEM coordinate system named by `coord`
+Positions are raw components (vector, 3×n matrix, vector of vectors or tuples) in the IRBEM coordinate system named by `coord`
 (`"GDZ"` default, `"GEO"`, `"GSM"`, `"GSE"`, `"SM"`, `"GEI"`, `"MAG"`, `"SPH"`, `"RLL"`, `"HEE"`, `"HAE"`, `"HEEQ"`, `"TOD"`, `"J2000"`, `"TEME"`),
 in [IRBEM's component order](https://prbem.github.io/IRBEM/api/general_information.html#coordinate-systems).
 

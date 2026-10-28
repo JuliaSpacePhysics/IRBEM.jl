@@ -44,7 +44,6 @@ Only one IRBEM routine runs at a time: calls from multiple threads are serialize
 module IRBEM
 using Dates
 using IRBEM_jll
-using StaticArrays
 using TimeseriesUtilities: mapsamples, times
 
 export MagInput
@@ -63,7 +62,7 @@ include("utils.jl")
 const SIG = """time, x, maginput=(; ); coord="GDZ", kext=OPQ77, options=(0, 0, 0, 0, 0)"""
 const SIG_DOC = """
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
-- `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time)
+- `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors or 3-tuples (one per time)
 - `coord` (optional): IRBEM name of the coordinate system of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
 - `kext` (optional): External field model (default: `OPQ77`)
 - `options` (optional): IRBEM model options, 5 integers (default: all 0)

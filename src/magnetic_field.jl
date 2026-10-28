@@ -117,6 +117,9 @@ function get_mlt(time, 𝐫)
     return mlt[]
 end
 
-_geo(x, _) = SVector{3, Float64}(x)
+function _geo(x, _)
+    length(x) == 3 || throw(DimensionMismatch("a position must have 3 components, got $(length(x))"))
+    return Ref(NTuple{3, Float64}(x))
+end
 
 get_mlt(A; dim = nothing) = mapsamples((𝐫, t) -> get_mlt(t, 𝐫), A, times(A, dim); dim)
