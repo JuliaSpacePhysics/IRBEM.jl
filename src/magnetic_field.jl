@@ -103,16 +103,14 @@ function get_hemi(args...; kw...)
 end
 
 """
-    get_mlt(𝐫, time)
-    get_mlt(time, 𝐫::AbstractVector)
-    get_mlt(x, y, z, time)
+    get_mlt(time, 𝐫)
     get_mlt(A; dim = nothing)
 
 Get Magnetic Local Time (MLT) from a GEO position `𝐫` (Cartesian, or a `CoordinateVector` in any system) and `time`.
 `A` is a time series of GEO positions (e.g. `DimArray`, `KeyedArray`, or `Timed(A, times; dim)`, see TimeseriesUtilities.jl);
 returns MLT per time in the same container.
 """
-function get_mlt(𝐫, time)
+function get_mlt(time, 𝐫)
     iyear, idoy, ut = decompose_time_s(time)
     mlt = Ref{Float64}()
     get_mlt1!(iyear, idoy, ut, _geo(𝐫, time), mlt)
@@ -121,6 +119,4 @@ end
 
 _geo(x, _) = SVector{3, Float64}(x)
 
-get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
-get_mlt(time, 𝐫::AbstractVector) = get_mlt(𝐫, time)
-get_mlt(A; dim = nothing) = mapsamples(get_mlt, A, times(A, dim); dim)
+get_mlt(A; dim = nothing) = mapsamples((𝐫, t) -> get_mlt(t, 𝐫), A, times(A, dim); dim)

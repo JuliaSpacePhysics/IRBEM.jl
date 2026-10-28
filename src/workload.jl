@@ -9,6 +9,6 @@ function workload()
         # Find the magnetic equator
         find_magequator(t, 𝐫, maginput; kext),
         # Calculate MLT
-        get_mlt(t, 𝐫),
+        get_mlt(t, [2.2, 2.8, 0.35]),
     )
 end

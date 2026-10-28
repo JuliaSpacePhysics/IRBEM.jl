@@ -60,16 +60,13 @@ include("types.jl")
 include("lib.jl")
 include("utils.jl")
 
-const KEXT = Ref{Int32}(OPQ77)
-const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
-
-const SIG = """time, x, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[]"""
+const SIG = """time, x, maginput=(; ); coord="GDZ", kext=OPQ77, options=(0, 0, 0, 0, 0)"""
 const SIG_DOC = """
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
 - `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time)
 - `coord` (optional): IRBEM name of the coordinate system of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
-- `kext` (optional): External field model selection (default: KEXT[])
-- `options` (optional): Model options (default: OPTIONS[])
+- `kext` (optional): External field model (default: `OPQ77`)
+- `options` (optional): IRBEM model options, 5 integers (default: all 0)
 - `maginput`: Named tuple, dictionary or `MagInput` with magnetic field model inputs (optional).
   Values are scalars (shared by all times) or vectors (one per time); unset inputs are missing (`-9999`).
 """

@@ -2,7 +2,7 @@
 # IRBEM only has single-point versions of these routines, so we loop over points.
 
 """
-    find_mirror_point(time, x, alpha, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[])
+    find_mirror_point(time, x, alpha, maginput=(; ); coord="GDZ", kext=OPQ77, options=(0, 0, 0, 0, 0))
 
 Find the magnitude and location of the mirror point along a field line traced from any given location and local pitch-angle.
 
@@ -24,7 +24,7 @@ function find_mirror_point(time, x, alpha, args...; kw...)
 end
 
 """
-    find_foot_point(time, x, stop_alt, hemi_flag, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[])
+    find_foot_point(time, x, stop_alt, hemi_flag, maginput=(; ); coord="GDZ", kext=OPQ77, options=(0, 0, 0, 0, 0))
 
 Find the footprint of a field line that passes through location X in a given hemisphere.
 

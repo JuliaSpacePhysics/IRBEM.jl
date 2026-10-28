@@ -99,12 +99,12 @@ end
     r = [2.195517156287977, 2.834061428571752, 0.34759070278576953]
 
     true_MLT = 9.56999052595853
-    @test get_mlt(r, t) == get_mlt(t, r) ≈ true_MLT
+    @test get_mlt(t, r) ≈ true_MLT
 
     using DimensionalData, TimeseriesUtilities
     t2 = [t, t + Hour(6)]
     A = [r r]
-    mlt2 = get_mlt.(eachcol(A), t2)
+    mlt2 = get_mlt.(t2, eachcol(A))
     @test get_mlt(Timed(A, t2; dim = 2)) == Timed(mlt2, t2)
     pos = DimArray(permutedims(A), (Ti(t2), Y(1:3)))
     @test get_mlt(pos) == mlt2
@@ -126,7 +126,7 @@ end
 end
 
 @testitem "drift_bounce_orbit" setup = [Share] begin
-    res = drift_bounce_orbit(t, x, maginput; dipole...)
+    res = drift_bounce_orbit(t, x, 90, maginput; dipole...)
     Lm = res.Lm
     @test Lm ≈ 4.326679 atol = 1.0e-2
     alt = x[1]
