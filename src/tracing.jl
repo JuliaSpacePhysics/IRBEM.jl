@@ -2,8 +2,7 @@
 # These routines take a single point; output sizes are fixed by IRBEM.
 
 """
-    trace_field_line($SIG1, R0=1.0)
-    trace_field_line($SIG2; R0=1.0)
+    trace_field_line($SIG, R0=1.0)
 
 Trace a full field line which crosses the input position until radial distance `R0=1.0` (Re).
 
@@ -29,8 +28,7 @@ function trace_field_line(args...; R0 = 1.0, kw...)
 end
 
 """
-    drift_bounce_orbit($SIG1, alpha=90, R0=1)
-    drift_bounce_orbit($SIG2; alpha=90, R0=1)
+    drift_bounce_orbit($SIG, alpha=90, R0=1)
 
 Trace a full drift-bounce orbit for particles with a specified pitch angle `alpha=90` at the input location until radial distance `R0=1.0` (Re).
 Returns only positions between mirror points, with 25 azimuths.
@@ -65,8 +63,7 @@ function drift_bounce_orbit(args...; alpha = 90, R0 = 1, kw...)
 end
 
 """
-    drift_shell($SIG1)
-    drift_shell($SIG2)
+    drift_shell($SIG)
 
 Trace a full drift shell for particles that have their mirror point at the input location.
 

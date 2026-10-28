@@ -18,26 +18,14 @@ end
 @testsnippet Share begin
     using Dates
     kext = "T89"
-    model = MagneticField(options = [0, 0, 0, 0, 0], kext = kext)
-    dipol_model = MagneticField(options = [0, 0, 5, 0, 5], kext = 0)
+    dipole = (; kext = 0, options = [0, 0, 5, 0, 5])
     t = DateTime("2015-02-02T06:12:43")
     x = [600.0, 60.0, 50.0] # GDZ: alt, lat, lon
-    X = Dict(
-        "dateTime" => t,
-        "x1" => x[1],  # km
-        "x2" => x[2],   # lat
-        "x3" => x[3]    # lon
-    )
     maginput = Dict(:Kp => 40.0)
     maginput_nt = (; Kp = 40.0)
 
     n = 3
-    X_array = Dict(
-        "dateTime" => fill(t, n),
-        "x1" => fill(x[1], n),  # km
-        "x2" => fill(x[2], n),   # lat
-        "x3" => fill(x[3], n)    # lon
-    )
+    ts, xs = fill(t, n), fill(x, n)
     maginput_array = Dict("Kp" => fill(40.0, n))
     maginput_array_nt = (; Kp = fill(40.0, n))
 
@@ -59,7 +47,6 @@ end
         Blocal = 42271.43059990003, Bmin = 626.2258295723121,
         XJ = 7.020585390925573, MLT = 10.170297893176182,
     )
-    @test approx(make_lstar(model, X, maginput), l_star_true)
     @test approx(make_lstar(t, x, maginput; coord = "GDZ", kext), l_star_true)
     @test approx(make_lstar(t, x, maginput_nt; kext), l_star_true)
     @test approx(make_lstar([t, t], [x, x], (; Kp = [40.0, 40.0]); kext), map(v -> fill(v, 2), l_star_true))
@@ -80,47 +67,38 @@ end
     @test fast.Lm == exact.Lm
     @test fast.Lstar ≈ exact.Lstar rtol = 0.02
     # IRBEM overwrites options in place; user options must not change
-    m = MagneticField(options = [0, 0, 0, 0, 1], kext = 5, sysaxes = "GEO")
-    landi2lstar(m, Dict("dateTime" => t, "x1" => pos[1], "x2" => pos[2], "x3" => pos[3]))
-    @test m.options == [0, 0, 0, 0, 1]
+    options = [0, 0, 0, 0, 1]
+    landi2lstar(t, pos; coord = "GEO", kext = 5, options)
+    @test options == [0, 0, 0, 0, 1]
 end
 
 @testitem "get_hemi" setup = [Share] begin
     @test get_hemi([t, t], [x, [600.0, -60.0, 50.0]], maginput_nt; kext) == [1, -1]
-    @test get_hemi(model, X, maginput) == 1
 end
 
 @testitem "get_field_multi" setup = [Share] begin
     true_Bgeo = [-21079.764883133903, -21504.21460705096, -29666.24532305791]
     true_Bl = 42271.43059990003
 
-    result = get_field_multi(model, X_array, maginput_array)
+    result = get_field_multi(ts, xs, maginput_array; kext)
     @test result.Bgeo ≈ repeat(true_Bgeo, 1, n)
     @test result.Bmag ≈ fill(true_Bl, n)
-    @test approx(get_field_multi(model, X, maginput), (true_Bgeo, true_Bl))
-    @test approx(result, get_field_multi(model, X_array, maginput_array_nt))
+    @test approx(get_field_multi(t, x, maginput; kext), (true_Bgeo, true_Bl))
+    @test approx(result, get_field_multi(ts, xs, maginput_array_nt; kext))
 end
 
 @testitem "get_bderivs" setup = [Share] begin
-    res = get_bderivs(model, X, 0.1, maginput)
+    res = get_bderivs(t, x, 0.1, maginput_nt; kext)
     @test res.Bmag ≈ 42271.43059990003
     @test res.gradBmag ≈ [-49644.37271032293, -46030.37495428827, -83024.03530787815]
     @test size(res.diffB) == (3, 3)
-    @test approx(res, get_bderivs(t, x, 0.1, maginput_nt; kext))
 end
 
 @testitem "get_mlt" setup = [Share] begin
     # Corresponds to test_get_mlt in Python
-    input_dict = Dict(
-        "dateTime" => t,
-        "x1" => 2.195517156287977,
-        "x2" => 2.834061428571752,
-        "x3" => 0.34759070278576953
-    )
     r = [2.195517156287977, 2.834061428571752, 0.34759070278576953]
 
     true_MLT = 9.56999052595853
-    @test get_mlt(input_dict) ≈ true_MLT
     @test get_mlt(r, t) == get_mlt(t, r) ≈ true_MLT
 
     using DimensionalData, TimeseriesUtilities
@@ -133,14 +111,13 @@ end
 end
 
 @testitem "trace_field_line" setup = [Share] begin
-    res = trace_field_line(model, X, maginput)
+    res = trace_field_line(t, x, maginput_nt; kext)
     @test length(res.Blocal) == size(res.posit, 2) == res.Nposit
-    @test approx(res, trace_field_line(t, x, maginput_nt; kext))
     @test_throws ArgumentError trace_field_line([t, t], [x, x], maginput_nt; kext)
 end
 
 @testitem "drift_shell" setup = [Share] begin
-    res = drift_shell(dipol_model, X, maginput)
+    res = drift_shell(t, x, maginput; dipole...)
     Lm = res.Lm
     @test Lm ≈ 4.326679 atol = 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
@@ -149,10 +126,10 @@ end
 end
 
 @testitem "drift_bounce_orbit" setup = [Share] begin
-    res = drift_bounce_orbit(dipol_model, X, maginput)
+    res = drift_bounce_orbit(t, x, maginput; dipole...)
     Lm = res.Lm
     @test Lm ≈ 4.326679 atol = 1.0e-2
-    alt = X["x1"]
+    alt = x[1]
     @test abs((res.hmin - alt) / alt) <= 1.0e-2
     L_posit = _compute_dipole_L_shell(res.posit)
     @test maximum(abs, filter(!isnan, L_posit .- Lm)) / Lm <= 1.0e-2
@@ -188,8 +165,4 @@ end
 
     @test_throws ArgumentError make_lstar(DateTime(2020), [600.0, 60.0, 50.0], (; kp = 40.0))
     @test_throws ArgumentError make_lstar(DateTime(2020), [600.0, 60.0, 50.0]; options = [0, 0, 0])
-
-    dt = DateTime("2015-02-02T06:12:43")
-    @test IRBEM.get_datetime(Dict("dateTime" => dt)) == dt
-    @test IRBEM.get_datetime(Dict("Time" => "2015-02-02T06:12:43")) == dt
 end

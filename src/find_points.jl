@@ -3,7 +3,6 @@
 
 """
     find_mirror_point(time, x, alpha, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[])
-    find_mirror_point(model::MagneticField, X, alpha, maginput=(; ))
 
 Find the magnitude and location of the mirror point along a field line traced from any given location and local pitch-angle.
 
@@ -18,15 +17,14 @@ $SIG_DOC
 
 References: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-FIND_MIRROR_POINT)
 """
-function find_mirror_point(arg1, arg2, alpha, args...; kw...)
-    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+function find_mirror_point(time, x, alpha, args...; kw...)
+    p, single = prepare_irbem(time, x, args...; kw...)
     nt = (; Blocal = _out(p), Bmirr = _out(p), posit = _out(p, 3))
     return _output(_each_point!(find_mirror_point1!, p, (Float64(alpha),), nt), single)
 end
 
 """
     find_foot_point(time, x, stop_alt, hemi_flag, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[])
-    find_foot_point(model::MagneticField, X, stop_alt, hemi_flag, maginput=(; ))
 
 Find the footprint of a field line that passes through location X in a given hemisphere.
 
@@ -42,15 +40,14 @@ $SIG_DOC
 
 References: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-FIND_FOOT_POINT)
 """
-function find_foot_point(arg1, arg2, stop_alt, hemi_flag, args...; kw...)
-    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+function find_foot_point(time, x, stop_alt, hemi_flag, args...; kw...)
+    p, single = prepare_irbem(time, x, args...; kw...)
     nt = (; XFOOT = _out(p, 3), BFOOT = _out(p, 3), BFOOTMAG = _out(p))
     return _output(_each_point!(find_foot_point1!, p, (Float64(stop_alt), Int32(hemi_flag)), nt), single)
 end
 
 """
-    find_magequator($SIG1)
-    find_magequator($SIG2)
+    find_magequator($SIG)
 
 Find the coordinates of the magnetic equator from tracing the magnetic field line from the input location.
 Returns a named tuple with fields Bmin and XGEO (location of magnetic equator).
