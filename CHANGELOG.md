@@ -6,6 +6,9 @@
 
 - **Breaking**: `coord` is a keyword: `make_lstar(time, x, maginput; coord = "GEO", kext)` instead of `make_lstar(time, x, "GEO", maginput; kext)`, likewise for the other `time, x` routines.
 - **Breaking**: `coord` no longer accepts integer codes or coordinate types; pass the IRBEM name.
+- **Breaking**: `drift_bounce_orbit(time, x, alpha, maginput; R0)`: `alpha` is positional and required, like in `find_mirror_point`.
+- **Breaking**: `get_mlt(time, 𝐫)` only, like the other routines; `get_mlt(𝐫, time)` and `get_mlt(x, y, z, time)` are removed.
+- **Breaking**: defaults are constants `kext = OPQ77`, `options = (0, 0, 0, 0, 0)`; the `IRBEM.KEXT` and `IRBEM.OPTIONS` refs are removed.
 - **Breaking**: `transform(time, pos, in, out)` is `coord_trans(in, out, time, pos)` with IRBEM names only, and returns the shape of `pos`; the `in => out` and `"in2out"` forms are removed.
 
 ### Removed

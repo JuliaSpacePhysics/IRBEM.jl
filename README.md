@@ -45,7 +45,7 @@ trace_field_line(t, 𝐫, maginput; kext)
 find_magequator(t, 𝐫, maginput; kext) # -> a namedtuple with fields Bmin and XGEO
 
 # Calculate MLT
-get_mlt(t, 𝐫)
+get_mlt(t, [2.2, 2.8, 0.35]) # GEO [Re]
 
 # Transform raw components between IRBEM coordinate systems, one time per point
 coord_trans("GDZ", "GSM", t, 𝐫)

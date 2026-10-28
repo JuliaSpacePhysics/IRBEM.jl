@@ -27,5 +27,5 @@ end
     @test make_lstar([t, t], [geo, geo], mi; kext = "T89").Lm ≈ [Lm, Lm] rtol = 1.0e-6
     @test_throws ArgumentError make_lstar([t, t], [geo, gdz], mi; kext = "T89")
     @test_throws ArgumentError make_lstar(t, gdz, mi; coord = "GDZ", kext = "T89")
-    @test get_mlt(gdz, t) ≈ get_mlt(geo, t)
+    @test get_mlt(t, gdz) ≈ get_mlt(t, geo)
 end

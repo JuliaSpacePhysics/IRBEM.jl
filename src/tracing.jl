@@ -28,9 +28,9 @@ function trace_field_line(args...; R0 = 1.0, kw...)
 end
 
 """
-    drift_bounce_orbit($SIG, alpha=90, R0=1)
+    drift_bounce_orbit(time, x, alpha, maginput=(; ); R0=1.0, coord="GDZ", kext=OPQ77, options=(0, 0, 0, 0, 0))
 
-Trace a full drift-bounce orbit for particles with a specified pitch angle `alpha=90` at the input location until radial distance `R0=1.0` (Re).
+Trace a full drift-bounce orbit for particles with local pitch angle `alpha` (degrees) at the input location until radial distance `R0` (Re).
 Returns only positions between mirror points, with 25 azimuths.
 
 # Outputs:
@@ -48,7 +48,7 @@ Entries of `posit` and `Blocal` beyond `Nposit` are `NaN`.
 
 Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.html#routine-DRIFT_BOUNCE_ORBIT)
 """
-function drift_bounce_orbit(args...; alpha = 90, R0 = 1, kw...)
+function drift_bounce_orbit(time, x, alpha, args...; R0 = 1.0, kw...)
     max_points, n_azimuth = 1000, 25
     posit = Array{Float64, 3}(undef, 3, max_points, n_azimuth)
     Blocal = Matrix{Float64}(undef, max_points, n_azimuth)
@@ -57,7 +57,7 @@ function drift_bounce_orbit(args...; alpha = 90, R0 = 1, kw...)
         Lm = Ref{Float64}(), Lstar = Ref{Float64}(), Blocal, Bmin = Ref{Float64}(), Bmirr = Ref{Float64}(),
         XJ = Ref{Float64}(), posit, Nposit, hmin = Ref{Float64}(), hmin_lon = Ref{Float64}(),
     )
-    drift_bounce_orbit2_1_!(_single(prepare_irbem(args...; kw...))..., Float64(alpha), Float64(R0), nt...)
+    drift_bounce_orbit2_1_!(_single(prepare_irbem(time, x, args...; kw...))..., Float64(alpha), Float64(R0), nt...)
     clean_posit!(posit, Blocal, Nposit)
     return map(_nan, nt)
 end

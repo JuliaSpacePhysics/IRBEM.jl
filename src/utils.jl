@@ -22,7 +22,7 @@ Convert user inputs into the `(ntime, kext, options, sysaxes, iyear, idoy, ut, x
 arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
 `single` is `true` when `time` is a scalar.
 """
-function prepare_irbem(time, x, maginput = (;); coord = nothing, kext = KEXT[], options = OPTIONS[])
+function prepare_irbem(time, x, maginput = (;); coord = nothing, kext = OPQ77, options = (0, 0, 0, 0, 0))
     (x1, x2, x3), sysaxes = _loc(x, coord)
     iyear, idoy, ut = decompose_time(time)
     n = length(ut)
