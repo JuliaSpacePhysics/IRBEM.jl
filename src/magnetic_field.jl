@@ -1,6 +1,5 @@
 """
-    make_lstar($SIG1)
-    make_lstar($SIG2)
+    make_lstar($SIG)
 
 Compute magnetic coordinates at a spacecraft position.
 Returns a named tuple with fields Lm, Lstar, Blocal, Bmin, XJ, and MLT.
@@ -20,8 +19,7 @@ Reference: [IRBEM API](https://prbem.github.io/IRBEM/api/magnetic_coordinates.ht
 make_lstar(args...; kw...) = _lstar(make_lstar1_!, prepare_irbem(args...; kw...))
 
 """
-    landi2lstar($SIG1)
-    landi2lstar($SIG2)
+    landi2lstar($SIG)
 
 Like [`make_lstar`](@ref), but L* is deduced empirically from Lm, I and day of year, which is much faster.
 Errors in L* are below 2%. Valid for locally mirroring particles only.
@@ -41,8 +39,7 @@ function _lstar(f!, (p, single))
 end
 
 """
-    get_field_multi($SIG1)
-    get_field_multi($SIG2)
+    get_field_multi($SIG)
 
 Compute the GEO vector of the magnetic field at input location for a set of internal/external magnetic field.
 
@@ -60,8 +57,7 @@ function get_field_multi(args...; kw...)
 end
 
 """
-    get_bderivs($SIG1)
-    get_bderivs($SIG2)
+    get_bderivs($SIG)
 
 Compute the magnetic field and its 1st-order derivatives at each input location.
 
@@ -82,16 +78,15 @@ julia> get_bderivs("2015-02-02T06:12:43", [600.0, 60.0, 50.0], 0.1, (; Kp = 40.0
      [-13530.079906431165 31460.805163291334 53890.73134176735; 30427.464243221693 -16715.08632269888 50326.93737340687; 62620.43884602288 59981.93936448166 44395.53254933224])
 ```
 """
-function get_bderivs(arg1, arg2, dX, args...; kw...)
-    p, single = prepare_irbem(arg1, arg2, args...; kw...)
+function get_bderivs(time, x, dX, args...; kw...)
+    p, single = prepare_irbem(time, x, args...; kw...)
     nt = (; Bgeo = _out(p, 3), Bmag = _out(p), gradBmag = _out(p, 3), diffB = _out(p, 3, 3))
     get_bderivs!(p..., Float64(dX), nt...)
     return _output(nt, single)
 end
 
 """
-    get_hemi($SIG1)
-    get_hemi($SIG2)
+    get_hemi($SIG)
 
 Magnetic hemisphere of the input location: `+1` northern, `-1` southern, `0` invalid magnetic field.
 
@@ -111,11 +106,9 @@ end
     get_mlt(𝐫, time)
     get_mlt(time, 𝐫::AbstractVector)
     get_mlt(x, y, z, time)
-    get_mlt(X::AbstractDict)
     get_mlt(A; dim = nothing)
 
 Get Magnetic Local Time (MLT) from a GEO position `𝐫` (Cartesian, or a `CoordinateVector` in any system) and `time`.
-`X` is a dictionary with keys `x1`, `x2`, `x3` (GEO position) and `dateTime` or `Time`.
 `A` is a time series of GEO positions (e.g. `DimArray`, `KeyedArray`, or `Timed(A, times; dim)`, see TimeseriesUtilities.jl);
 returns MLT per time in the same container.
 """
@@ -130,5 +123,4 @@ _geo(x, _) = SVector{3, Float64}(x)
 
 get_mlt(x, y, z, time) = get_mlt(SA_F64[x, y, z], time)
 get_mlt(time, 𝐫::AbstractVector) = get_mlt(𝐫, time)
-get_mlt(X::AbstractDict) = get_mlt(X["x1"], X["x2"], X["x3"], get_datetime(X))
 get_mlt(A; dim = nothing) = mapsamples(get_mlt, A, times(A, dim); dim)

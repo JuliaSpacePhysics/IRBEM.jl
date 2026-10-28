@@ -38,16 +38,6 @@ end
 
 Base.convert(::Type{Int32}, x::ExternalFieldModel) = Int32(x)
 
-mutable struct MagneticField
-    kext::Int32
-    options::Vector{Int32}
-    sysaxes::Int32
-end
-
-function MagneticField(; options = [0, 0, 0, 0, 0], kext = OPQ77, sysaxes = "GDZ")
-    return MagneticField(parse_kext(kext), options, coord_sys(sysaxes))
-end
-
 """
 Magnetic field inputs. Unset fields are `-9999`, which IRBEM treats as missing.
 

@@ -16,33 +16,14 @@ _output(nt, single) = single ? map(_squeeze ∘ _nan, nt) : map(_nan, nt)
 _out(p, dims...) = Array{Float64}(undef, dims..., p.ntime)
 
 """
-    get_datetime(X::AbstractDict)
-
-Extract datetime from input dictionary X.
-Supports 'dateTime' or 'Time' keys with DateTime or String values.
-"""
-function get_datetime(X::AbstractDict)
-    dt_val = get(X, "dateTime", get(X, "Time", nothing))
-    return !isnothing(dt_val) ? Dates.DateTime.(dt_val) : error("No date/time information found in input dictionary. Expected 'dateTime' or 'Time' key.")
-end
-
-"""
     prepare_irbem(args...; kw...) -> (p, single)
 
 Convert user inputs into the `(ntime, kext, options, sysaxes, iyear, idoy, ut, x1, x2, x3, maginput)`
 arguments shared by IRBEM routines, as a `NamedTuple` `p` in that order.
 `single` is `true` when `time` is a scalar.
 """
-prepare_irbem(time, x, maginput = (;); coord = nothing, kext = KEXT[], options = OPTIONS[]) =
-    _prepare(time, _loc(x, coord)..., maginput, kext, options)
-
-prepare_irbem(model::MagneticField, X::AbstractDict, maginput = (;)) =
-    _prepare(get_datetime(X), prepare_loc(X["x1"], X["x2"], X["x3"]), model.sysaxes, maginput, model.kext, model.options)
-
-# `(components, sysaxes)` of raw positions in system `coord`; typed positions in IRBEMGeoCotransExt
-_loc(x, coord) = prepare_loc(x), coord_sys(something(coord, "GDZ"))
-
-function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
+function prepare_irbem(time, x, maginput = (;); coord = nothing, kext = KEXT[], options = OPTIONS[])
+    (x1, x2, x3), sysaxes = _loc(x, coord)
     iyear, idoy, ut = decompose_time(time)
     n = length(ut)
     length(x1) == n || throw(DimensionMismatch("got $n time(s) but $(length(x1)) position(s)"))
@@ -52,6 +33,9 @@ function _prepare(time, (x1, x2, x3), sysaxes, maginput, kext, options)
     )
     return p, !(time isa AbstractVector)
 end
+
+# `(components, sysaxes)` of raw positions in system `coord`; typed positions in IRBEMGeoCotransExt
+_loc(x, coord) = prepare_loc(x), coord_sys(something(coord, "GDZ"))
 
 # Inputs at point `i`, for IRBEM's single-point routines
 function _point(p, i)

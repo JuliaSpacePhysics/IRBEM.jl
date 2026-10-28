@@ -5,11 +5,12 @@
 ### Changed
 
 - **Breaking**: `coord` is a keyword: `make_lstar(time, x, maginput; coord = "GEO", kext)` instead of `make_lstar(time, x, "GEO", maginput; kext)`, likewise for the other `time, x` routines.
-- **Breaking**: `coord` and `MagneticField(; sysaxes)` no longer accept integer codes or coordinate types; pass the IRBEM name.
+- **Breaking**: `coord` no longer accepts integer codes or coordinate types; pass the IRBEM name.
 - **Breaking**: `transform(time, pos, in, out)` is `coord_trans(in, out, time, pos)` with IRBEM names only, and returns the shape of `pos`; the `in => out` and `"in2out"` forms are removed.
 
 ### Removed
 
+- **Breaking**: `MagneticField` and the `f(model, X::AbstractDict, maginput)` signatures, incl. `get_mlt(X::AbstractDict)`; use `f(time, x, maginput; coord, kext, options)`.
 - **Breaking**: IRBEM's own `CoordinateVector` and coordinate types (`GDZ`, `GEO`, `GSM`, ...), incl. `S(time, pos)` conversions. Pass raw components with `coord`, or GeoCotrans.jl `CoordinateVector`s (note GeoCotrans `GDZ(lat, lon, alt)`).
 
 ## [0.2.0] - 2026-10-02

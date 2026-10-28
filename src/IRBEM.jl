@@ -47,7 +47,7 @@ using IRBEM_jll
 using StaticArrays
 using TimeseriesUtilities: mapsamples, times
 
-export MagInput, MagneticField
+export MagInput
 export make_lstar, landi2lstar, get_field_multi, get_mlt, get_hemi
 export get_bderivs
 export find_mirror_point, find_magequator, find_foot_point
@@ -63,23 +63,13 @@ include("utils.jl")
 const KEXT = Ref{Int32}(OPQ77)
 const OPTIONS = Ref{Vector{Int32}}([0, 0, 0, 0, 0])
 
-const SIG1 = """time, x, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[]"""
-const SIG2 = """model::MagneticField, X::AbstractDict, maginput=(; )"""
+const SIG = """time, x, maginput=(; ); coord="GDZ", kext=KEXT[], options=OPTIONS[]"""
 const SIG_DOC = """
-## Signature 1 (preferred):
 - `time`: Date and time (DateTime, Vector{DateTime}, or String)
 - `x`: Position as a 3-vector, a 3×n array, or a vector of 3-vectors (one per time)
 - `coord` (optional): IRBEM name of the coordinate system of raw `x` (default: "GDZ"); not allowed for a `CoordinateVector`
 - `kext` (optional): External field model selection (default: KEXT[])
 - `options` (optional): Model options (default: OPTIONS[])
-
-## Signature 2:
-- `model::MagneticField`: The magnetic field model
-- `X`: Dictionary with keys:
-  - `dateTime` or `Time`: Date and time (DateTime or String)
-  - `x1`, `x2`, `x3`: Position coordinates in the system specified by `sysaxes`
-
-## Common arguments:
 - `maginput`: Named tuple, dictionary or `MagInput` with magnetic field model inputs (optional).
   Values are scalars (shared by all times) or vectors (one per time); unset inputs are missing (`-9999`).
 """
